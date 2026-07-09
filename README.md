@@ -198,12 +198,35 @@ hand-edited names and comments are left alone. The formats it cannot guess —
 
 ## Install
 
+On Debian and Ubuntu, install from the Excelano apt repo so ditto updates with
+the rest of your system. Add the repo once, then install:
+
 ```sh
-./install.sh
+curl -fsSL https://excelano.com/apt/setup.sh | sudo sh
+sudo apt install ditto
 ```
 
-Builds the binary into `~/bin/ditto`. ditto is a single Go binary with no
-runtime dependencies of its own; the converters it calls are separate installs.
+Anywhere else with a Linux binary, fetch the latest release:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/excelano/ditto/main/install.sh | sh
+```
+
+The script drops the binary into `/usr/local/bin` (or `~/.local/bin` if that is
+not writable). Pin a version with `DITTO_VERSION=v0.1.0` or choose the directory
+with `DITTO_INSTALL_DIR`. Uninstall with the matching
+`uninstall.sh`, or `sudo apt remove ditto` if you installed via apt.
+
+To build from source (and on macOS, where the system already ships its own
+`/usr/bin/ditto`, so pick a different output name):
+
+```sh
+go build -o ~/bin/ditto .
+```
+
+ditto is a single Go binary with no runtime dependencies of its own; the
+converters it calls (office-convert, cleave, xsync) are separate installs, and
+`apt install ditto` recommends `pandoc` for the common Markdown-to-Word path.
 
 ## Claude Code skill
 
