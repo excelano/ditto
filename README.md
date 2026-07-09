@@ -151,6 +151,15 @@ the root, so neither one pays the cost of touching every other deliverable. The
 prefix matches on a path boundary, so `D3` selects `D3/…` without also catching
 `D30/…`.
 
+The prefix is the only lever here: `build` always rebuilds every target it
+selects, rerunning each `pipeline` and converter with no freshness or
+up-to-date check. Unlike cargo, which skips crates that have not changed, ditto
+has no incremental mode — a plain `ditto build` reruns the whole derivation,
+slow extract/enrich steps included. That is deliberate: it keeps a build fully
+reproducible and the manifest the only thing that decides what runs. For a
+handful of deliverables the redone work is cheap; when it is not, scope the
+build to the one deliverable you are iterating on with a prefix.
+
 `publish` mirrors `dist/` to the `[publish] root`: a SharePoint library
 (through `xsync`) or, when the root is a filesystem path, a plain recursive
 copy. Each target's `output` already names the destination subfolder and
