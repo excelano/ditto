@@ -1,4 +1,4 @@
-module ditto
+module github.com/excelano/ditto
 
 go 1.24
 
