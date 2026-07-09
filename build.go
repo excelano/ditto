@@ -9,8 +9,11 @@ import (
 )
 
 func cmdBuild(args []string) error {
-	if len(args) > 0 {
-		return fmt.Errorf("build takes no arguments")
+	var prefix string
+	if len(args) == 1 {
+		prefix = args[0]
+	} else if len(args) > 1 {
+		return fmt.Errorf("build takes at most one filter argument")
 	}
 	m, err := loadManifest()
 	if err != nil {
@@ -21,8 +24,18 @@ func cmdBuild(args []string) error {
 		return nil
 	}
 
-	built, failed := 0, 0
+	var targets []Target
 	for _, t := range m.Targets {
+		if underPrefix(t.Output, prefix) {
+			targets = append(targets, t)
+		}
+	}
+	if len(targets) == 0 {
+		return fmt.Errorf("no targets with output under %q", prefix)
+	}
+
+	built, failed := 0, 0
+	for _, t := range targets {
 		if err := buildTarget(t); err != nil {
 			fmt.Fprintf(os.Stderr, "  FAILED %s: %v\n", t.Output, err)
 			failed++
@@ -30,11 +43,23 @@ func cmdBuild(args []string) error {
 		}
 		built++
 	}
-	fmt.Printf("Built %d of %d target(s) into %s/\n", built, len(m.Targets), distDir)
+	fmt.Printf("Built %d of %d target(s) into %s/\n", built, len(targets), distDir)
 	if failed > 0 {
 		return fmt.Errorf("%d target(s) failed", failed)
 	}
 	return nil
+}
+
+// underPrefix reports whether an output path falls under a filter prefix. An
+// empty prefix matches everything; otherwise the prefix must land on a path
+// segment boundary, so "D3" matches "D3/report.docx" but not "D30/report.docx".
+func underPrefix(output, prefix string) bool {
+	if prefix == "" {
+		return true
+	}
+	o := filepath.ToSlash(output)
+	p := strings.TrimSuffix(filepath.ToSlash(prefix), "/")
+	return o == p || strings.HasPrefix(o, p+"/")
 }
 
 func buildTarget(t Target) error {

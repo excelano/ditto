@@ -18,9 +18,11 @@ built.
 Usage:
   ditto new <name>      Scaffold a new project (src/, dist/, Manifest.toml).
   ditto build           Build every target in the manifest into dist/.
+  ditto build <prefix>  Build only targets whose output falls under <prefix>/.
   ditto scan            Report files in src/ that no target covers.
   ditto scan --write    Append a target for each uncovered file, using defaults.
   ditto publish         Mirror dist/ to the publish root (SharePoint or local).
+  ditto publish <prefix>  Mirror only dist/<prefix>/ to <root>/<prefix>/.
   ditto publish -n      Preview the publish without writing anything.
   ditto publish --delete  Also remove root files no longer in dist/.
 

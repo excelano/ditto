@@ -100,12 +100,23 @@ converter = "converters/build_calendar.py"
 ```sh
 ditto new <name>      # scaffold src/, dist/, Manifest.toml, .gitignore
 ditto build           # build every target into dist/
+ditto build <prefix>  # build only targets whose output is under <prefix>/
 ditto scan            # report files in src/ that no target covers
 ditto scan --write    # append a target per uncovered file, using defaults
 ditto publish         # mirror dist/ to the publish root
+ditto publish <prefix>  # mirror only dist/<prefix>/ to <root>/<prefix>/
 ditto publish -n      # preview the publish without writing anything
 ditto publish --delete  # also remove root files no longer in dist/
 ```
+
+On an engagement with many deliverables, a single manifest holds dozens of
+targets but you are usually iterating on one. `build` and `publish` take an
+optional prefix — the leading segment of an output path — to work on just that
+slice: `ditto build D3` builds only the targets whose `output` is under `D3/`,
+and `ditto publish D3` mirrors only `dist/D3/` to the matching `D3/` subfolder of
+the root, so neither one pays the cost of touching every other deliverable. The
+prefix matches on a path boundary, so `D3` selects `D3/…` without also catching
+`D30/…`.
 
 `publish` mirrors `dist/` to the `[publish] root`: a SharePoint library
 (through `xsync`) or, when the root is a filesystem path, a plain recursive
