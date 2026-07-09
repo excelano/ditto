@@ -204,3 +204,17 @@ hand-edited names and comments are left alone. The formats it cannot guess —
 
 Builds the binary into `~/bin/ditto`. ditto is a single Go binary with no
 runtime dependencies of its own; the converters it calls are separate installs.
+
+## Claude Code skill
+
+`skills/ditto/` is a [Claude Code](https://docs.claude.com/en/docs/claude-code)
+skill so an AI coding agent drives ditto instead of hand-running the converters
+it orchestrates. Install it into your skills directory:
+
+```sh
+cp -r skills/ditto ~/.claude/skills/
+```
+
+The agent then reaches for `ditto build`/`ditto publish` on a manifest-governed
+deliverable set, and hands a genuine one-off conversion straight to the
+underlying converter.
