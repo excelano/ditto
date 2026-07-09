@@ -73,6 +73,12 @@ parent directories already created; a non-zero exit fails that target. Any
 `reference` and `view` are passed to it as the `REFERENCE_DOC` and `VIEW`
 environment variables.
 
+The script path is resolved relative to the project root, so `build.py` and
+`converters/build.py` both refer to a file in the project; a bare name not found
+there falls through to a `$PATH` lookup. The script is run directly, so it must
+be executable (`chmod +x`) and start with a shebang like `#!/usr/bin/env python3`.
+The same holds for `pipeline` scripts below.
+
 When one deliverable is assembled from several sources — say a multi-tab
 workbook built from three CSVs — list them all with `inputs` instead of `input`.
 The first path is still passed as `<input>`, the positional argument, and the

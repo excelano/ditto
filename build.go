@@ -112,13 +112,30 @@ func effectiveReference(p Project, t Target) string {
 	return ""
 }
 
+// resolveScript locates a converter or pipeline script the way the project
+// expects: a path is relative to the project root, not $PATH. Go's exec only
+// does a $PATH lookup for a bare name and never checks the current directory,
+// so a bare "enrich.py" would not be found even when it sits in the project. If
+// the path exists relative to the root, return it absolute so exec runs that
+// file; otherwise leave it for a genuine $PATH lookup.
+func resolveScript(path string) string {
+	if !filepath.IsAbs(path) {
+		if _, err := os.Stat(path); err == nil {
+			if abs, err := filepath.Abs(path); err == nil {
+				return abs
+			}
+		}
+	}
+	return path
+}
+
 // runPipeline runs a target's upstream scripts in order before the converter,
 // each with no arguments, failing the target on the first non-zero exit. These
 // are the computation stages that produce the target's inputs (an extract, an
 // enrich), so they run before the inputs are checked for existence.
 func runPipeline(t Target) error {
 	for _, script := range t.Pipeline {
-		cmd := exec.Command(script)
+		cmd := exec.Command(resolveScript(script))
 		cmd.Env = os.Environ()
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
@@ -157,7 +174,7 @@ func absInputs(ins []string) ([]string, error) {
 func converterCmd(t Target, ins []string, out string) (*exec.Cmd, error) {
 	in := ins[0]
 	if t.Converter != "" {
-		cmd := exec.Command(t.Converter, in, out)
+		cmd := exec.Command(resolveScript(t.Converter), in, out)
 		cmd.Env = os.Environ()
 		if t.Reference != "" {
 			cmd.Env = append(cmd.Env, "REFERENCE_DOC="+t.Reference)
