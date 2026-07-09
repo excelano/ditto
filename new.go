@@ -44,6 +44,10 @@ func starterManifest(name string) string {
 	return fmt.Sprintf(`[project]
 name = %s
 
+# Optional. Override where 'ditto build' writes and 'ditto publish' reads.
+# Defaults to dist/ under the project; ~ is expanded. src/ is always fixed.
+# dist = "~/%s-stage"
+
 # Optional. Where 'ditto publish' mirrors dist/.
 # A SharePoint library URL or a local path. Delete this section to skip publishing.
 # [publish]
@@ -60,5 +64,5 @@ name = %s
 # reference = "brand/excelano.docx"    # optional styling template
 # view = "slides"                      # optional (cleave/html only)
 # converter = "converters/custom.sh"   # optional override
-`, tomlString(name))
+`, tomlString(name), name)
 }

@@ -37,12 +37,16 @@ func cmdPublish(args []string) error {
 	if m.Publish == nil || strings.TrimSpace(m.Publish.Root) == "" {
 		return fmt.Errorf("no [publish] root in %s; nothing to publish to", manifestName)
 	}
+	dist, err := m.resolveDist()
+	if err != nil {
+		return err
+	}
 
 	// A prefix narrows both ends: only dist/<prefix> is mirrored, and only to
 	// the matching <root>/<prefix> subfolder.
-	distRoot := distDir
+	distRoot := dist
 	if prefix != "" {
-		distRoot = filepath.Join(distDir, filepath.FromSlash(prefix))
+		distRoot = filepath.Join(dist, filepath.FromSlash(prefix))
 	}
 	if _, err := os.Stat(distRoot); err != nil {
 		hint := "ditto build"

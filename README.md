@@ -59,6 +59,19 @@ default_reference_docx = "brand/excelano.docx"
 default_reference_pptx = "brand/excelano.pptx"
 ```
 
+`src/` is fixed — it is the curated master tree, and `scan` reports anything in
+it that no target covers, so it must hold only real sources. The output side is
+not fixed: set `dist` at the `[project]` level to build and publish through a
+directory other than the default `dist/` (a `~` is expanded), for instance an
+external staging folder outside the repo. A `dist` that resolves inside `src/`
+is rejected, since building there would write outputs into the source tree.
+
+```toml
+[project]
+name = "parsolvo-assessment"
+dist = "~/austin-contract2-stage"
+```
+
 | Input | Output | Engine |
 |---|---|---|
 | `.md` | `.docx` | office-convert (pandoc) |

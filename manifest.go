@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/BurntSushi/toml"
 )
@@ -23,6 +25,7 @@ type Manifest struct {
 
 type Project struct {
 	Name                 string `toml:"name"`
+	Dist                 string `toml:"dist"`                   // optional; overrides the dist/ output dir (~ expanded). src/ is always fixed.
 	DefaultReferenceDocx string `toml:"default_reference_docx"` // fallback reference for .docx targets
 	DefaultReferencePptx string `toml:"default_reference_pptx"` // fallback reference for .pptx targets
 }
@@ -55,6 +58,25 @@ func (t Target) resolvedInputs() []string {
 	}
 	ins = append(ins, t.Inputs...)
 	return ins
+}
+
+// resolveDist returns where build writes and publish reads: the project's dist
+// override if set (~ expanded), else the default dist/ under the project root.
+// src/ is deliberately not overridable, so a dist that resolves inside src/ is
+// rejected — building there would write outputs into the curated source tree.
+func (m *Manifest) resolveDist() (string, error) {
+	dist := distDir
+	if strings.TrimSpace(m.Project.Dist) != "" {
+		dist = expandHome(m.Project.Dist)
+	}
+	absSrc, errSrc := filepath.Abs(srcDir)
+	absDist, errDist := filepath.Abs(dist)
+	if errSrc == nil && errDist == nil {
+		if absDist == absSrc || strings.HasPrefix(absDist, absSrc+string(os.PathSeparator)) {
+			return "", fmt.Errorf("dist %q resolves inside %s/; build would write into the source tree", dist, srcDir)
+		}
+	}
+	return dist, nil
 }
 
 func loadManifest() (*Manifest, error) {

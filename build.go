@@ -19,6 +19,10 @@ func cmdBuild(args []string) error {
 	if err != nil {
 		return err
 	}
+	dist, err := m.resolveDist()
+	if err != nil {
+		return err
+	}
 	if len(m.Targets) == 0 {
 		fmt.Printf("No targets in the manifest. Add files to %s/ and run: ditto scan --write\n", srcDir)
 		return nil
@@ -40,14 +44,14 @@ func cmdBuild(args []string) error {
 
 	built, failed := 0, 0
 	for _, t := range targets {
-		if err := buildTarget(t); err != nil {
+		if err := buildTarget(t, dist); err != nil {
 			fmt.Fprintf(os.Stderr, "  FAILED %s: %v\n", t.Output, err)
 			failed++
 			continue
 		}
 		built++
 	}
-	fmt.Printf("Built %d of %d target(s) into %s/\n", built, len(targets), distDir)
+	fmt.Printf("Built %d of %d target(s) into %s/\n", built, len(targets), dist)
 	if failed > 0 {
 		return fmt.Errorf("%d target(s) failed", failed)
 	}
@@ -89,7 +93,7 @@ func underPrefix(output, prefix string) bool {
 	return o == p || strings.HasPrefix(o, p+"/")
 }
 
-func buildTarget(t Target) error {
+func buildTarget(t Target, dist string) error {
 	rel := t.resolvedInputs()
 	if len(rel) == 0 || t.Output == "" {
 		return fmt.Errorf("target is missing input or output")
@@ -104,7 +108,7 @@ func buildTarget(t Target) error {
 			return fmt.Errorf("input not found: %s", ins[i])
 		}
 	}
-	out := filepath.Join(distDir, t.Output)
+	out := filepath.Join(dist, t.Output)
 	if err := os.MkdirAll(filepath.Dir(out), 0o755); err != nil {
 		return err
 	}
