@@ -173,11 +173,18 @@ func converterCmd(t Target, ins []string, out string) (*exec.Cmd, error) {
 		return cmd, nil
 	}
 
+	inExt, outExt := ext(in), ext(out)
+
+	// The .xlsx built-in is the only one that accepts multiple inputs: N CSVs
+	// become one workbook with a sheet per CSV (named by filename stem), which
+	// csv2xlsx writes when handed several inputs and an -o output.
 	if len(ins) > 1 {
-		return nil, fmt.Errorf("built-in converters take a single input; set converter = \"...\" to consume multiple inputs")
+		if outExt == "xlsx" && allExt(ins, "csv") {
+			return exec.Command("csv2xlsx", append(append([]string{}, ins...), "-o", out)...), nil
+		}
+		return nil, fmt.Errorf("only the .xlsx built-in takes multiple inputs, and only as CSVs; set converter = \"...\" otherwise")
 	}
 
-	inExt, outExt := ext(in), ext(out)
 	switch outExt {
 	case "docx":
 		if isMarkdown(inExt) {
@@ -201,6 +208,16 @@ func converterCmd(t Target, ins []string, out string) (*exec.Cmd, error) {
 }
 
 func isMarkdown(e string) bool { return e == "md" || e == "markdown" }
+
+// allExt reports whether every path has the given extension.
+func allExt(paths []string, want string) bool {
+	for _, p := range paths {
+		if ext(p) != want {
+			return false
+		}
+	}
+	return true
+}
 
 // pandocCmd builds an office-convert invocation. Those scripts read the style
 // template from REFERENCE_DOC, so reference is passed through the environment.

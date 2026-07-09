@@ -64,6 +64,7 @@ default_reference_pptx = "brand/excelano.pptx"
 | `.md` | `.docx` | office-convert (pandoc) |
 | `.md` | `.pptx` | office-convert (pandoc) |
 | `.csv` | `.xlsx` | office-convert (openpyxl) |
+| several `.csv` | `.xlsx` | office-convert (one sheet per CSV) |
 | `.md` / `.csv` / `.ics` | `.html` | cleave |
 
 For anything the built-ins do not cover, set `converter` on the target to your
@@ -78,8 +79,9 @@ The first path is still passed as `<input>`, the positional argument, and the
 whole set is handed to the converter as the `INPUTS` environment variable, one
 absolute path per line. Naming every source here keeps the manifest honest about
 what the deliverable depends on, and stops `ditto scan` from reporting the extra
-files as uncovered. `inputs` is only meaningful with a custom `converter`; the
-built-ins each take a single input.
+files as uncovered. `inputs` pairs with a custom `converter` for a deliverable
+with real presentation logic; the one built-in that takes several inputs is
+`.xlsx`, which turns several CSVs into a sheet each with no converter (below).
 
 ```toml
 [[target]]
@@ -90,6 +92,18 @@ inputs = [
 ]
 output = "deliverable3/Contract Action Calendar.xlsx"
 converter = "converters/build_calendar.py"
+```
+
+When several CSVs just need to land as separate tabs with no extra logic — each
+already final, no coloring or derived columns — point `inputs` at them with an
+`.xlsx` output and no `converter`. The built-in writes one sheet per CSV, named
+after the input filename stem, in the order listed. Anything fancier than plain
+tabs stays a custom `converter`.
+
+```toml
+[[target]]
+inputs = ["active.csv", "expired.csv"]
+output = "Asset Register.xlsx"
 ```
 
 Often the real source of a deliverable is further upstream than the file the
