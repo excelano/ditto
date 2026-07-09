@@ -42,6 +42,9 @@ func buildTarget(t Target) error {
 	if len(rel) == 0 || t.Output == "" {
 		return fmt.Errorf("target is missing input or output")
 	}
+	if err := runPipeline(t); err != nil {
+		return err
+	}
 	ins := make([]string, len(rel))
 	for i, p := range rel {
 		ins[i] = filepath.Join(srcDir, p)
@@ -63,6 +66,23 @@ func buildTarget(t Target) error {
 		return fmt.Errorf("%s: %w", cmd.Args[0], err)
 	}
 	fmt.Printf("  %s -> %s\n", strings.Join(ins, ", "), out)
+	return nil
+}
+
+// runPipeline runs a target's upstream scripts in order before the converter,
+// each with no arguments, failing the target on the first non-zero exit. These
+// are the computation stages that produce the target's inputs (an extract, an
+// enrich), so they run before the inputs are checked for existence.
+func runPipeline(t Target) error {
+	for _, script := range t.Pipeline {
+		cmd := exec.Command(script)
+		cmd.Env = os.Environ()
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		if err := cmd.Run(); err != nil {
+			return fmt.Errorf("pipeline %s: %w", script, err)
+		}
+	}
 	return nil
 }
 

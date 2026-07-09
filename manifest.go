@@ -40,6 +40,7 @@ type Target struct {
 	Reference string   `toml:"reference"` // optional styling template
 	View      string   `toml:"view"`      // optional (cleave/html only)
 	Converter string   `toml:"converter"` // optional override
+	Pipeline  []string `toml:"pipeline"`  // optional scripts to run, in order, before the converter
 }
 
 // resolvedInputs returns every source path the target consumes (input first if

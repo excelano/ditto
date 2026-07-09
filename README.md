@@ -79,6 +79,22 @@ output = "deliverable3/Contract Action Calendar.xlsx"
 converter = "converters/build_calendar.py"
 ```
 
+Often the real source of a deliverable is further upstream than the file the
+converter reads: a raw export gets pulled, then classified and enriched, and
+only the result is ready to press into a workbook. List those upstream steps
+with `pipeline` and ditto runs them in order before the converter, each with no
+arguments, failing the target on the first non-zero exit. They run before the
+inputs are checked for existence, because they are what produce those inputs, so
+`ditto build` reproduces the whole derivation rather than just the last hop.
+
+```toml
+[[target]]
+pipeline = ["extract_contracts.py", "enrich_contracts.py"]
+input = "contracts_enriched.csv"
+output = "deliverable3/Contract Action Calendar.xlsx"
+converter = "converters/build_calendar.py"
+```
+
 ## Commands
 
 ```sh
