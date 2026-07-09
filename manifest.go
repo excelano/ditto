@@ -22,7 +22,9 @@ type Manifest struct {
 }
 
 type Project struct {
-	Name string `toml:"name"`
+	Name                 string `toml:"name"`
+	DefaultReferenceDocx string `toml:"default_reference_docx"` // fallback reference for .docx targets
+	DefaultReferencePptx string `toml:"default_reference_pptx"` // fallback reference for .pptx targets
 }
 
 // Publish names where `ditto publish` mirrors dist/. Root is a SharePoint

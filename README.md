@@ -46,6 +46,19 @@ The output extension picks the converter, so the same Markdown file can build a
 Word document in one target and a slide deck in another just by naming
 `.docx` in one and `.pptx` in the other.
 
+When a project has a house style, most `.docx` targets want the same reference
+doc and most `.pptx` targets the same slide template. Set them once at the
+`[project]` level with `default_reference_docx` and `default_reference_pptx`
+rather than repeating `reference` on every target; a target's own `reference`
+still overrides the default.
+
+```toml
+[project]
+name = "parsolvo-assessment"
+default_reference_docx = "brand/excelano.docx"
+default_reference_pptx = "brand/excelano.pptx"
+```
+
 | Input | Output | Engine |
 |---|---|---|
 | `.md` | `.docx` | office-convert (pandoc) |

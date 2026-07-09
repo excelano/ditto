@@ -27,6 +27,7 @@ func cmdBuild(args []string) error {
 	var targets []Target
 	for _, t := range m.Targets {
 		if underPrefix(t.Output, prefix) {
+			t.Reference = effectiveReference(m.Project, t)
 			targets = append(targets, t)
 		}
 	}
@@ -92,6 +93,23 @@ func buildTarget(t Target) error {
 	}
 	fmt.Printf("  %s -> %s\n", strings.Join(ins, ", "), out)
 	return nil
+}
+
+// effectiveReference resolves the styling template a target actually uses. A
+// reference set on the target always wins; otherwise a .docx or .pptx output
+// falls back to the project-level default for that type, so a house style need
+// not be repeated on every target. Other output types have no default.
+func effectiveReference(p Project, t Target) string {
+	if t.Reference != "" {
+		return t.Reference
+	}
+	switch ext(t.Output) {
+	case "docx":
+		return p.DefaultReferenceDocx
+	case "pptx":
+		return p.DefaultReferencePptx
+	}
+	return ""
 }
 
 // runPipeline runs a target's upstream scripts in order before the converter,
