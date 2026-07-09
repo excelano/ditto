@@ -74,8 +74,14 @@ func uncoveredInputs(covered map[string]bool) ([]string, error) {
 		if err != nil {
 			return err
 		}
-		if d.IsDir() || strings.HasPrefix(d.Name(), ".") {
+		if d.IsDir() {
+			if strings.HasPrefix(d.Name(), ".") {
+				return filepath.SkipDir // skip whole hidden trees (.git, .ipynb_checkpoints)
+			}
 			return nil
+		}
+		if strings.HasPrefix(d.Name(), ".") {
+			return nil // hidden file
 		}
 		rel, err := filepath.Rel(srcDir, path)
 		if err != nil {

@@ -83,7 +83,10 @@ When one deliverable is assembled from several sources — say a multi-tab
 workbook built from three CSVs — list them all with `inputs` instead of `input`.
 The first path is still passed as `<input>`, the positional argument, and the
 whole set is handed to the converter as the `INPUTS` environment variable, one
-absolute path per line. Naming every source here keeps the manifest honest about
+absolute path per line. The positional `<input>` and `<output>` are relative to
+the project root, while `INPUTS` lines are absolute, so a converter that changes
+its working directory should read sources from `INPUTS` rather than the
+positional argument. Naming every source here keeps the manifest honest about
 what the deliverable depends on, and stops `ditto scan` from reporting the extra
 files as uncovered. `inputs` pairs with a custom `converter` for a deliverable
 with real presentation logic; the one built-in that takes several inputs is
@@ -118,7 +121,10 @@ only the result is ready to press into a workbook. List those upstream steps
 with `pipeline` and ditto runs them in order before the converter, each with no
 arguments, failing the target on the first non-zero exit. They run before the
 inputs are checked for existence, because they are what produce those inputs, so
-`ditto build` reproduces the whole derivation rather than just the last hop.
+`ditto build` reproduces the whole derivation rather than just the last hop. A
+pipeline belongs to its target and runs whenever that target builds; two targets
+that share the same pipeline each run it, in keeping with ditto rebuilding
+everything rather than tracking what is already up to date.
 
 ```toml
 [[target]]

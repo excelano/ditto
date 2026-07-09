@@ -34,6 +34,9 @@ func cmdBuild(args []string) error {
 	if len(targets) == 0 {
 		return fmt.Errorf("no targets with output under %q", prefix)
 	}
+	if err := checkDuplicateOutputs(targets); err != nil {
+		return err
+	}
 
 	built, failed := 0, 0
 	for _, t := range targets {
@@ -49,6 +52,29 @@ func cmdBuild(args []string) error {
 		return fmt.Errorf("%d target(s) failed", failed)
 	}
 	return nil
+}
+
+// checkDuplicateOutputs fails the build if two targets write the same output,
+// which would otherwise silently clobber: build order alone would decide the
+// winner and one deliverable would be lost.
+func checkDuplicateOutputs(targets []Target) error {
+	seen := map[string]string{} // output -> first target's primary input
+	for _, t := range targets {
+		key := filepath.ToSlash(t.Output)
+		if prev, ok := seen[key]; ok {
+			return fmt.Errorf("two targets write the same output %s (inputs %s and %s); each output must be unique", t.Output, prev, primaryInput(t))
+		}
+		seen[key] = primaryInput(t)
+	}
+	return nil
+}
+
+// primaryInput labels a target by its first input, for diagnostics.
+func primaryInput(t Target) string {
+	if ins := t.resolvedInputs(); len(ins) > 0 {
+		return ins[0]
+	}
+	return "(no input)"
 }
 
 // underPrefix reports whether an output path falls under a filter prefix. An
