@@ -36,7 +36,9 @@ func cmdScan(args []string) error {
 
 	covered := map[string]bool{}
 	for _, t := range m.Targets {
-		covered[filepath.ToSlash(t.Input)] = true
+		for _, in := range t.resolvedInputs() {
+			covered[filepath.ToSlash(in)] = true
+		}
 	}
 
 	missing, err := uncoveredInputs(covered)

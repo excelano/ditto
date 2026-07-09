@@ -59,6 +59,26 @@ parent directories already created; a non-zero exit fails that target. Any
 `reference` and `view` are passed to it as the `REFERENCE_DOC` and `VIEW`
 environment variables.
 
+When one deliverable is assembled from several sources — say a multi-tab
+workbook built from three CSVs — list them all with `inputs` instead of `input`.
+The first path is still passed as `<input>`, the positional argument, and the
+whole set is handed to the converter as the `INPUTS` environment variable, one
+absolute path per line. Naming every source here keeps the manifest honest about
+what the deliverable depends on, and stops `ditto scan` from reporting the extra
+files as uncovered. `inputs` is only meaningful with a custom `converter`; the
+built-ins each take a single input.
+
+```toml
+[[target]]
+inputs = [
+  "contracts_enriched.csv",
+  "contracts_expired.csv",
+  "contract_monthly_summary.csv",
+]
+output = "deliverable3/Contract Action Calendar.xlsx"
+converter = "converters/build_calendar.py"
+```
+
 ## Commands
 
 ```sh

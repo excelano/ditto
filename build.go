@@ -24,7 +24,7 @@ func cmdBuild(args []string) error {
 	built, failed := 0, 0
 	for _, t := range m.Targets {
 		if err := buildTarget(t); err != nil {
-			fmt.Fprintf(os.Stderr, "  FAILED %s: %v\n", t.Input, err)
+			fmt.Fprintf(os.Stderr, "  FAILED %s: %v\n", t.Output, err)
 			failed++
 			continue
 		}
@@ -38,18 +38,22 @@ func cmdBuild(args []string) error {
 }
 
 func buildTarget(t Target) error {
-	if t.Input == "" || t.Output == "" {
+	rel := t.resolvedInputs()
+	if len(rel) == 0 || t.Output == "" {
 		return fmt.Errorf("target is missing input or output")
 	}
-	in := filepath.Join(srcDir, t.Input)
-	out := filepath.Join(distDir, t.Output)
-	if _, err := os.Stat(in); err != nil {
-		return fmt.Errorf("input not found: %s", in)
+	ins := make([]string, len(rel))
+	for i, p := range rel {
+		ins[i] = filepath.Join(srcDir, p)
+		if _, err := os.Stat(ins[i]); err != nil {
+			return fmt.Errorf("input not found: %s", ins[i])
+		}
 	}
+	out := filepath.Join(distDir, t.Output)
 	if err := os.MkdirAll(filepath.Dir(out), 0o755); err != nil {
 		return err
 	}
-	cmd, err := converterCmd(t, in, out)
+	cmd, err := converterCmd(t, ins, out)
 	if err != nil {
 		return err
 	}
@@ -58,7 +62,7 @@ func buildTarget(t Target) error {
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("%s: %w", cmd.Args[0], err)
 	}
-	fmt.Printf("  %s -> %s\n", in, out)
+	fmt.Printf("  %s -> %s\n", strings.Join(ins, ", "), out)
 	return nil
 }
 
@@ -67,10 +71,28 @@ func ext(p string) string {
 	return strings.ToLower(strings.TrimPrefix(filepath.Ext(p), "."))
 }
 
-// converterCmd resolves the command that turns in into out. A custom converter
-// overrides the built-ins entirely; otherwise the (input ext, output ext) pair
-// selects a built-in. The output extension is what picks the format.
-func converterCmd(t Target, in, out string) (*exec.Cmd, error) {
+// absInputs turns the src/-relative input paths into absolute paths for the
+// INPUTS env var, so a custom converter can find them regardless of its cwd.
+func absInputs(ins []string) ([]string, error) {
+	abs := make([]string, len(ins))
+	for i, p := range ins {
+		a, err := filepath.Abs(p)
+		if err != nil {
+			return nil, err
+		}
+		abs[i] = a
+	}
+	return abs, nil
+}
+
+// converterCmd resolves the command that turns ins into out. ins[0] is the
+// primary input, passed to the converter as its positional argument; the full
+// list reaches a custom converter through the INPUTS env var (newline-joined,
+// absolute paths). A custom converter overrides the built-ins entirely;
+// otherwise the (input ext, output ext) pair selects a built-in. The output
+// extension is what picks the format.
+func converterCmd(t Target, ins []string, out string) (*exec.Cmd, error) {
+	in := ins[0]
 	if t.Converter != "" {
 		cmd := exec.Command(t.Converter, in, out)
 		cmd.Env = os.Environ()
@@ -80,7 +102,16 @@ func converterCmd(t Target, in, out string) (*exec.Cmd, error) {
 		if t.View != "" {
 			cmd.Env = append(cmd.Env, "VIEW="+t.View)
 		}
+		abs, err := absInputs(ins)
+		if err != nil {
+			return nil, err
+		}
+		cmd.Env = append(cmd.Env, "INPUTS="+strings.Join(abs, "\n"))
 		return cmd, nil
+	}
+
+	if len(ins) > 1 {
+		return nil, fmt.Errorf("built-in converters take a single input; set converter = \"...\" to consume multiple inputs")
 	}
 
 	inExt, outExt := ext(in), ext(out)

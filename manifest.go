@@ -34,11 +34,24 @@ type Publish struct {
 // Target builds one file from src/ into one file under dist/. The output
 // extension selects the converter unless Converter overrides it.
 type Target struct {
-	Input     string `toml:"input"`     // relative to src/
-	Output    string `toml:"output"`    // relative to dist/
-	Reference string `toml:"reference"` // optional styling template
-	View      string `toml:"view"`      // optional (cleave/html only)
-	Converter string `toml:"converter"` // optional override
+	Input     string   `toml:"input"`     // relative to src/
+	Inputs    []string `toml:"inputs"`    // optional; extra sources, relative to src/ (custom converter only)
+	Output    string   `toml:"output"`    // relative to dist/
+	Reference string   `toml:"reference"` // optional styling template
+	View      string   `toml:"view"`      // optional (cleave/html only)
+	Converter string   `toml:"converter"` // optional override
+}
+
+// resolvedInputs returns every source path the target consumes (input first if
+// set, then inputs), joined under src/. Order is stable: the first element is
+// the primary input passed to the converter as its positional argument.
+func (t Target) resolvedInputs() []string {
+	var ins []string
+	if t.Input != "" {
+		ins = append(ins, t.Input)
+	}
+	ins = append(ins, t.Inputs...)
+	return ins
 }
 
 func loadManifest() (*Manifest, error) {
