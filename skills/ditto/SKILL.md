@@ -98,7 +98,7 @@ Anything outside that table needs a `converter` on the target (see
 `reference.md`). `reference` is a style template (a pandoc reference doc for
 `.docx`/`.pptx`, a brand CSS for `.html`); `view` is a cleave view for HTML.
 
-## The four verbs
+## The verbs
 
 | Verb | Does | Reach for it when |
 |---|---|---|
