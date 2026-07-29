@@ -94,11 +94,48 @@ func publishRemote(src, dst string, dryRun, del bool) error {
 		xargs = append(xargs, "--delete")
 	}
 	xargs = append(xargs, src, dst)
+	// On a dry run, echo the invocation itself. "Why is this file being sent
+	// again?" is an xsync change-detection question, and the answer is the same
+	// command with --itemize-changes on it — so print a line that can be pasted
+	// and extended rather than making the reader rebuild it from the two paths.
+	if dryRun {
+		fmt.Println(" ", shellCommand("xsync", xargs))
+	}
 	cmd := exec.Command("xsync", xargs...)
 	cmd.Stdin = os.Stdin // xsync prompts to confirm deletes on a TTY
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
+}
+
+// shellCommand renders an argv as a line that can be pasted into a shell,
+// quoting only the arguments that need it so the common case stays readable.
+func shellCommand(name string, args []string) string {
+	parts := make([]string, 0, len(args)+1)
+	parts = append(parts, name)
+	for _, a := range args {
+		parts = append(parts, shellQuote(a))
+	}
+	return strings.Join(parts, " ")
+}
+
+// shellQuote single-quotes s unless every character is safe unquoted. Library
+// URLs routinely carry spaces ("Shared Documents") and, when copied from the
+// browser's share button, ? and & — all of which the shell acts on.
+func shellQuote(s string) string {
+	safe := s != "" && strings.IndexFunc(s, func(r rune) bool {
+		switch {
+		case r >= 'a' && r <= 'z', r >= 'A' && r <= 'Z', r >= '0' && r <= '9':
+			return false
+		case strings.ContainsRune("-_./:%", r):
+			return false
+		}
+		return true
+	}) < 0
+	if safe {
+		return s
+	}
+	return "'" + strings.ReplaceAll(s, "'", `'\''`) + "'"
 }
 
 // publishLocal mirrors src into a local folder. A plain overwrite copy is

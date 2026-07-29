@@ -184,11 +184,16 @@ build to the one deliverable you are iterating on with a prefix.
 copy. Each target's `output` already names the destination subfolder and
 filename, so `dist/` is the publish layout — there is no separate staging step.
 
-One thing to expect on SharePoint: the library rewrites Office files on upload
-(it binds them to a content type), so the stored bytes differ from what you
-sent. The deliverable content is untouched, but `xsync` will re-upload `.docx`,
-`.xlsx`, and `.pptx` files on every publish rather than skipping them as
-unchanged. This is SharePoint's behavior, not ditto's.
+One thing to expect on SharePoint: the library rewrites Office files on upload,
+binding them to a content type, so the stored bytes differ from what you sent
+and the remote size and hash never match your local copy again. The deliverable
+content is untouched. From `xsync` 1.6.0 this no longer costs you anything —
+change detection compares modification times and only looks at size once the
+timestamp has moved, so an unchanged `.docx`, `.xlsx`, or `.pptx` is skipped on
+the next publish. Earlier versions re-uploaded every Office file on every
+publish and cut a new document version each time, so if you still see that,
+check `xsync -V` first. To find out why a particular file is being sent, run
+`xsync --dry-run --itemize-changes` against the same source and destination.
 
 `ditto scan` with no flag only reports; `--write` appends a `[[target]]` for
 each uncovered file using the default output (`.md` to `.docx`, `.csv` to

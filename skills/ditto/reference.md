@@ -147,10 +147,16 @@ selection lever; there is no per-file freshness check.
   so `dist/` **is** the publish layout — there is no separate staging remap.
 
 **Expect on SharePoint:** the library rewrites Office files on upload (it binds
-them to a content type), so the stored bytes differ from what was sent. The
-deliverable content is intact, but `xsync` re-uploads `.docx`/`.xlsx`/`.pptx` on
-every publish rather than skipping them as unchanged. This is SharePoint's
-behavior, not ditto's or xsync's to route around.
+them to a content type), so the stored bytes differ from what was sent and the
+remote size and hash never match your local copy again. The deliverable content
+is intact. **xsync 1.6.0 and later handle this** — change detection compares
+modification times and consults size only once the timestamp has moved, so an
+unchanged `.docx`/`.xlsx`/`.pptx` is skipped on the next publish. On xsync 1.5.x
+it re-uploaded every Office file on every publish and cut a new document version
+each time; if you still see that, check `xsync -V` before investigating further.
+To see why any file was picked, run `xsync --dry-run --itemize-changes` against
+the same source and destination — it labels each line `new`, `time`, `content`,
+or `forced`.
 
 ## Install
 
