@@ -10,9 +10,13 @@ import (
 )
 
 const (
-	manifestName = "Manifest.toml"
-	srcDir       = "src"
-	distDir      = "dist"
+	manifestName = "Ditto.toml"
+	// The manifest was called Manifest.toml through v0.1.0. Kept only to give
+	// a project written against that name a pointed error instead of a bare
+	// "no Ditto.toml"; it is never read.
+	legacyManifestName = "Manifest.toml"
+	srcDir             = "src"
+	distDir            = "dist"
 )
 
 // Manifest is the authoritative description of a ditto project: nothing is
@@ -81,6 +85,9 @@ func (m *Manifest) resolveDist() (string, error) {
 
 func loadManifest() (*Manifest, error) {
 	if _, err := os.Stat(manifestName); err != nil {
+		if _, legacyErr := os.Stat(legacyManifestName); legacyErr == nil {
+			return nil, fmt.Errorf("no %s in the current directory, but %s is here: the manifest was renamed after v0.1.0. Rename it (mv %s %s) — the contents are unchanged", manifestName, legacyManifestName, legacyManifestName, manifestName)
+		}
 		return nil, fmt.Errorf("no %s in the current directory", manifestName)
 	}
 	var m Manifest

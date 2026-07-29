@@ -3,7 +3,7 @@ name: ditto
 description: >-
   Build a managed set of Office and HTML deliverables from text sources with the
   `ditto` CLI — cargo for documents. Use this when a project keeps its
-  deliverables as Markdown/CSV under `src/` with a `Manifest.toml`, or when a
+  deliverables as Markdown/CSV under `src/` with a `Ditto.toml`, or when a
   task is to produce the Word/Excel/PowerPoint/HTML versions of an authored set
   and optionally publish them to a SharePoint library: `ditto build`, then
   `ditto publish`. ditto is the conductor, not a converter — it drives
@@ -60,7 +60,7 @@ first, in `src/`, then let ditto build.
 
 ## The manifest is authoritative
 
-`Manifest.toml` in the project root lists every deliverable. **If a file is not
+`Ditto.toml` in the project root lists every deliverable. **If a file is not
 listed, it is not built** — there is no implicit globbing. A minimal project:
 
 ```toml
@@ -102,7 +102,7 @@ Anything outside that table needs a `converter` on the target (see
 
 | Verb | Does | Reach for it when |
 |---|---|---|
-| `ditto new <name>` | Scaffold `src/`, `dist/`, `Manifest.toml`, `.gitignore` | Starting a new deliverable project |
+| `ditto new <name>` | Scaffold `src/`, `dist/`, `Ditto.toml`, `.gitignore` | Starting a new deliverable project |
 | `ditto build [prefix]` | Build every target (or only those whose output is under `prefix/`) into `dist/` | Producing the Office/HTML files; iterating on one deliverable with a prefix |
 | `ditto scan [--write]` | Report `src/` files no target covers; `--write` appends a target per uncovered file with default output | After adding sources, to catch anything the manifest misses |
 | `ditto publish [prefix] [-n] [--delete]` | Mirror `dist/` to the `[publish] root` (SharePoint via xsync, or a local copy) | Handing the built set to the client library |
@@ -125,7 +125,7 @@ ditto new client-assessment          # scaffold the project
 cd client-assessment
 # ... author sources under src/ (assessment.md, inventory.csv, ...) ...
 ditto scan --write                   # add a target per source, default outputs
-# ... hand-edit Manifest.toml: fix output names, add references, add a .pptx target ...
+# ... hand-edit Ditto.toml: fix output names, add references, add a .pptx target ...
 ditto build                          # press everything into dist/
 ditto publish -n                     # preview the SharePoint mirror
 ditto publish                        # push dist/ to the library

@@ -1,6 +1,6 @@
 # ditto — reference
 
-Complete contracts for authoring a `Manifest.toml`, writing a custom converter,
+Complete contracts for authoring a `Ditto.toml`, writing a custom converter,
 and understanding what `build`, `scan`, and `publish` do. The binary
 (`ditto --help`) and the [README](https://github.com/excelano/ditto/blob/main/README.md)
 are authoritative; this expands on them.
@@ -11,8 +11,8 @@ are authoritative; this expands on them.
   overridable. Inputs are named relative to it.
 - `dist/` — built deliverables. Gitignored by the scaffold. Overridable per
   project (see `dist` below). Outputs are named relative to it.
-- `Manifest.toml` — in the project root, authoritative. Not listed, not built.
-- Commands run from the project root (the directory holding `Manifest.toml`).
+- `Ditto.toml` — in the project root, authoritative. Not listed, not built.
+- Commands run from the project root (the directory holding `Ditto.toml`).
 
 ## Manifest schema
 

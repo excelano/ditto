@@ -12,9 +12,9 @@ Security fixes ship in a new tagged release. Update with `sudo apt upgrade ditto
 
 ## What ditto does
 
-ditto is a build orchestrator that runs locally. It reads a `Manifest.toml`, converts text sources under `src/` into Office and HTML files under `dist/`, and — only when you run `ditto publish` — mirrors `dist/` to the configured root. It keeps no configuration or state of its own, sends no telemetry, and makes no network connections itself.
+ditto is a build orchestrator that runs locally. It reads a `Ditto.toml`, converts text sources under `src/` into Office and HTML files under `dist/`, and — only when you run `ditto publish` — mirrors `dist/` to the configured root. It keeps no configuration or state of its own, sends no telemetry, and makes no network connections itself.
 
-**A manifest can execute code.** A `[[target]]` may name a `converter` script and a `pipeline` of scripts, and `ditto build` runs them. Treat a `Manifest.toml` and its scripts the way you would any build file (a Makefile, an npm `scripts` block): a manifest from an untrusted source can run arbitrary commands on your machine with your privileges. Only build projects you trust, and review the `converter` and `pipeline` entries of a manifest you did not write before running `ditto build`.
+**A manifest can execute code.** A `[[target]]` may name a `converter` script and a `pipeline` of scripts, and `ditto build` runs them. Treat a `Ditto.toml` and its scripts the way you would any build file (a Makefile, an npm `scripts` block): a manifest from an untrusted source can run arbitrary commands on your machine with your privileges. Only build projects you trust, and review the `converter` and `pipeline` entries of a manifest you did not write before running `ditto build`.
 
 ## What ditto calls
 

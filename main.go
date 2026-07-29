@@ -16,7 +16,7 @@ publish root. The manifest is authoritative: if a file is not listed, it is not
 built.
 
 Usage:
-  ditto new <name>      Scaffold a new project (src/, dist/, Manifest.toml).
+  ditto new <name>      Scaffold a new project (src/, dist/, Ditto.toml).
   ditto build           Build every target in the manifest into dist/.
   ditto build <prefix>  Build only targets whose output falls under <prefix>/.
   ditto scan            Report files in src/ that no target covers.

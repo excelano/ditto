@@ -20,7 +20,7 @@ missing.
 
 ## The manifest is authoritative
 
-`Manifest.toml` lists every deliverable. If a file is not listed, it is not
+`Ditto.toml` lists every deliverable. If a file is not listed, it is not
 built — there is no implicit globbing. Each target names an input under `src/`,
 an output under `dist/`, and optionally a style template, a view, or a custom
 converter.
@@ -150,7 +150,7 @@ converter = "converters/build_calendar.py"
 ## Commands
 
 ```sh
-ditto new <name>      # scaffold src/, dist/, Manifest.toml, .gitignore
+ditto new <name>      # scaffold src/, dist/, Ditto.toml, .gitignore
 ditto build           # build every target into dist/
 ditto build <prefix>  # build only targets whose output is under <prefix>/
 ditto scan            # report files in src/ that no target covers
