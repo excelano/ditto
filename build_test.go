@@ -109,3 +109,59 @@ func TestIsFreshMissingInput(t *testing.T) {
 		t.Error("a missing input must fall through to the build for a real error")
 	}
 }
+
+// A dry run must reach the same rebuild decision as a real build while running
+// neither the converter nor the pipeline. This project's converter does not
+// exist and its pipeline writes a file, so either one running is visible.
+func staleProjectWithSideEffects(t *testing.T) {
+	t.Helper()
+	t.Chdir(t.TempDir())
+
+	mustWrite(t, manifestName, `[project]
+name = "demo"
+
+[[target]]
+input = "report.md"
+output = "Report.docx"
+converter = "./no-such-converter"
+pipeline = ["./touch-evidence.sh"]
+`)
+	mustWrite(t, filepath.Join(srcDir, "report.md"), "# Report\n")
+	mustWrite(t, "touch-evidence.sh", "#!/bin/sh\ntouch pipeline-ran\n")
+	if err := os.Chmod("touch-evidence.sh", 0o755); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestBuildDryRunConvertsNothing(t *testing.T) {
+	staleProjectWithSideEffects(t)
+
+	if err := cmdBuild([]string{"--dry-run"}); err != nil {
+		t.Fatalf("a dry run must not fail on a converter it never calls: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(distDir, "Report.docx")); err == nil {
+		t.Error("a dry run wrote an output")
+	}
+	if _, err := os.Stat("pipeline-ran"); err == nil {
+		t.Error("a dry run ran the pipeline, which writes into the project")
+	}
+}
+
+func TestBuildDryRunShortFlag(t *testing.T) {
+	staleProjectWithSideEffects(t)
+	if err := cmdBuild([]string{"-n"}); err != nil {
+		t.Fatalf("-n must mean the same as --dry-run: %v", err)
+	}
+}
+
+// Without the flag the same project fails, which is what proves the dry run
+// above was skipping the work rather than the project having none to do.
+func TestBuildWithoutDryRunRunsTheConverter(t *testing.T) {
+	staleProjectWithSideEffects(t)
+	if err := cmdBuild(nil); err == nil {
+		t.Error("a real build must call the missing converter and fail")
+	}
+	if _, err := os.Stat("pipeline-ran"); err != nil {
+		t.Error("a real build must run the pipeline")
+	}
+}

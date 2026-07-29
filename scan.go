@@ -25,7 +25,7 @@ func cmdScan(args []string) error {
 		case "--write":
 			write = true
 		default:
-			return fmt.Errorf("scan: unknown argument %q", a)
+			return unknownArg("scan", a)
 		}
 	}
 

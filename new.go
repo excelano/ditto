@@ -8,6 +8,13 @@ import (
 )
 
 func cmdNew(args []string) error {
+	// The name is a positional, so a flag must be rejected before it is taken
+	// for one: otherwise a mistyped flag becomes the project directory.
+	for _, a := range args {
+		if strings.HasPrefix(a, "-") {
+			return unknownArg("new", a)
+		}
+	}
 	if len(args) != 1 {
 		return fmt.Errorf("usage: ditto new <name>")
 	}
@@ -29,7 +36,7 @@ func cmdNew(args []string) error {
 // overwritten, and src/ keeps whatever it already holds.
 func cmdInit(args []string) error {
 	if len(args) != 0 {
-		return fmt.Errorf("usage: ditto init")
+		return unknownArg("init", args[0])
 	}
 	if _, err := os.Stat(manifestName); err == nil {
 		return fmt.Errorf("%s already exists; this is already a ditto project", manifestName)

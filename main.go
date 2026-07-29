@@ -20,16 +20,11 @@ Usage:
   ditto init            Scaffold a project around the files already here.
   ditto check           Validate the manifest without building anything.
   ditto build           Build every target whose output is out of date.
-  ditto build <prefix>  Build only targets whose output falls under <prefix>/.
-  ditto build --force   Rebuild every target, up to date or not.
   ditto scan            Report files in src/ that no target covers.
-  ditto scan --write    Append a target for each uncovered file, using defaults.
   ditto clean           Remove the built deliverables in dist/.
-  ditto clean -n        List what clean would remove, without removing it.
   ditto publish         Mirror dist/ to the publish root (SharePoint or local).
-  ditto publish <prefix>  Mirror only dist/<prefix>/ to <root>/<prefix>/.
-  ditto publish -n      Preview the publish without writing anything.
-  ditto publish --delete  Also remove root files no longer in dist/.
+
+Run 'ditto <command> --help' for the arguments and flags of one command.
 
 Flags:
   -h, --help       Show this help.
@@ -41,6 +36,13 @@ func main() {
 	if len(args) == 0 {
 		fmt.Fprint(os.Stderr, usage)
 		os.Exit(1)
+	}
+
+	// Help is answered here rather than inside each command, so that asking a
+	// command to explain itself never reaches its argument parsing.
+	if u, ok := commandUsage[args[0]]; ok && wantsHelp(args[1:]) {
+		fmt.Print(u)
+		return
 	}
 
 	var err error

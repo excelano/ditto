@@ -9,15 +9,17 @@ import (
 )
 
 func cmdBuild(args []string) error {
-	force := false
+	force, dryRun := false, false
 	var prefix string
 	for _, a := range args {
 		switch a {
 		case "-f", "--force":
 			force = true
+		case "-n", "--dry-run":
+			dryRun = true
 		default:
 			if strings.HasPrefix(a, "-") {
-				return fmt.Errorf("build: unknown argument %q", a)
+				return unknownArg("build", a)
 			}
 			if prefix != "" {
 				return fmt.Errorf("build takes at most one filter argument")
@@ -58,6 +60,14 @@ func cmdBuild(args []string) error {
 			fresh++
 			continue
 		}
+		// A dry run reports the same decision the real build just made, but
+		// runs neither the pipeline nor the converter: the pipeline is the
+		// stage that writes into src/, so previewing must stop short of it.
+		if dryRun {
+			fmt.Printf("  %s -> %s\n", strings.Join(srcInputs(t), ", "), filepath.Join(dist, t.Output))
+			built++
+			continue
+		}
 		if err := buildTarget(t, dist); err != nil {
 			fmt.Fprintf(os.Stderr, "  FAILED %s: %v\n", t.Output, err)
 			failed++
@@ -65,7 +75,11 @@ func cmdBuild(args []string) error {
 		}
 		built++
 	}
-	fmt.Printf("Built %d of %d target(s) into %s/", built, len(targets), dist)
+	verb := "Built"
+	if dryRun {
+		verb = "Would build"
+	}
+	fmt.Printf("%s %d of %d target(s) into %s/", verb, built, len(targets), dist)
 	if fresh > 0 {
 		fmt.Printf(" (%d up to date)", fresh)
 	}
@@ -74,6 +88,18 @@ func cmdBuild(args []string) error {
 		return fmt.Errorf("%d target(s) failed", failed)
 	}
 	return nil
+}
+
+// srcInputs turns a target's manifest-relative inputs into paths relative to
+// the project root, which is both what the converter is handed and what the
+// build prints.
+func srcInputs(t Target) []string {
+	rel := t.resolvedInputs()
+	ins := make([]string, len(rel))
+	for i, p := range rel {
+		ins[i] = filepath.Join(srcDir, p)
+	}
+	return ins
 }
 
 // isFresh reports whether a target's output is already newer than everything
@@ -159,18 +185,16 @@ func underPrefix(output, prefix string) bool {
 }
 
 func buildTarget(t Target, dist string) error {
-	rel := t.resolvedInputs()
-	if len(rel) == 0 || t.Output == "" {
+	if len(t.resolvedInputs()) == 0 || t.Output == "" {
 		return fmt.Errorf("target is missing input or output")
 	}
 	if err := runPipeline(t); err != nil {
 		return err
 	}
-	ins := make([]string, len(rel))
-	for i, p := range rel {
-		ins[i] = filepath.Join(srcDir, p)
-		if _, err := os.Stat(ins[i]); err != nil {
-			return fmt.Errorf("input not found: %s", ins[i])
+	ins := srcInputs(t)
+	for _, in := range ins {
+		if _, err := os.Stat(in); err != nil {
+			return fmt.Errorf("input not found: %s", in)
 		}
 	}
 	out := filepath.Join(dist, t.Output)

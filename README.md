@@ -162,6 +162,7 @@ ditto check           # validate the manifest without building anything
 ditto build           # build every target whose output is out of date
 ditto build <prefix>  # build only targets whose output is under <prefix>/
 ditto build --force   # rebuild every target, up to date or not
+ditto build -n        # list what would be rebuilt, without converting anything
 ditto scan            # report files in src/ that no target covers
 ditto scan --write    # append a target per uncovered file, using defaults
 ditto clean           # remove the built deliverables in dist/
@@ -171,6 +172,9 @@ ditto publish <prefix>  # mirror only dist/<prefix>/ to <root>/<prefix>/
 ditto publish -n      # preview the publish without writing anything
 ditto publish --delete  # also remove root files no longer in dist/
 ```
+
+Every command explains itself: `ditto <command> --help` gives its arguments,
+its flags, and what it is for.
 
 `new` creates a project; `init` adopts one. Point `init` at a folder that
 already holds your sources and it writes the manifest, adds `dist/` to an
@@ -209,7 +213,9 @@ way cargo skips crates that have not changed: a target is rebuilt when its
 output is older than any of its inputs, its styling reference, its converter
 script, or the manifest itself — so changing a target's `view` or `reference`
 rebuilds it just as editing the source does. `ditto build --force` reconverts
-everything regardless.
+everything regardless, and `ditto build -n` answers which targets that decision
+selects without running a converter or a pipeline — the question worth asking
+before a `--force` across an engagement's worth of deliverables.
 
 Two things are deliberately outside that check. A target with a `pipeline`
 always rebuilds, because the pipeline exists to regenerate inputs from

@@ -20,7 +20,7 @@ func cmdClean(args []string) error {
 		case "-n", "--dry-run":
 			dryRun = true
 		default:
-			return fmt.Errorf("clean: unknown argument %q", a)
+			return unknownArg("clean", a)
 		}
 	}
 

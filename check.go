@@ -19,7 +19,7 @@ import (
 // whose machine may not have the same tools.
 func cmdCheck(args []string) error {
 	if len(args) != 0 {
-		return fmt.Errorf("usage: ditto check")
+		return unknownArg("check", args[0])
 	}
 	m, err := loadManifest()
 	if err != nil {

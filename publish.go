@@ -21,7 +21,7 @@ func cmdPublish(args []string) error {
 			del = true
 		default:
 			if strings.HasPrefix(a, "-") {
-				return fmt.Errorf("publish: unknown argument %q", a)
+				return unknownArg("publish", a)
 			}
 			if prefix != "" {
 				return fmt.Errorf("publish takes at most one filter argument")

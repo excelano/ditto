@@ -2,7 +2,8 @@
 
 Complete contracts for authoring a `Ditto.toml`, writing a custom converter,
 and understanding what `build`, `scan`, and `publish` do. The binary
-(`ditto --help`) and the [README](https://github.com/excelano/ditto/blob/main/README.md)
+(`ditto --help` for the command list, `ditto <command> --help` for one
+command's flags) and the [README](https://github.com/excelano/ditto/blob/main/README.md)
 are authoritative; this expands on them.
 
 ## Layout and conventions
@@ -148,6 +149,10 @@ Anything missing or unreadable counts as stale, so a deleted input still
 reaches the build and produces a real error rather than being silently skipped.
 
 - `ditto build --force` (`-f`) reconverts everything selected.
+- `ditto build --dry-run` (`-n`) prints the same `input -> output` lines a real
+  build would and stops there: no converter runs, and no `pipeline` runs, so it
+  is safe against a pipeline that writes into `src/`. Combine with `--force` to
+  see the full set rather than only the stale ones.
 - Editing `view`, `reference`, or `converter` on a target rebuilds it, because
   the manifest is one of the tracked inputs.
 - Converters resolved from `$PATH` (`md2docx`, `csv2xlsx`, `cleave`) are **not**
