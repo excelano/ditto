@@ -83,12 +83,61 @@ func (m *Manifest) resolveDist() (string, error) {
 	return dist, nil
 }
 
-func loadManifest() (*Manifest, error) {
-	if _, err := os.Stat(manifestName); err != nil {
-		if _, legacyErr := os.Stat(legacyManifestName); legacyErr == nil {
-			return nil, fmt.Errorf("no %s in the current directory, but %s is here: the manifest was renamed after v0.1.0. Rename it (mv %s %s) — the contents are unchanged", manifestName, legacyManifestName, legacyManifestName, manifestName)
+// findProjectRoot walks up from the current directory looking for the manifest,
+// the way cargo finds Cargo.toml, so the verbs work from anywhere inside a
+// project instead of only at its root. It returns the directory holding the
+// manifest.
+func findProjectRoot() (string, error) {
+	start, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+	legacy := ""
+	for dir := start; ; {
+		if _, err := os.Stat(filepath.Join(dir, manifestName)); err == nil {
+			return dir, nil
 		}
-		return nil, fmt.Errorf("no %s in the current directory", manifestName)
+		// Remember the nearest project written against the pre-v0.2.0 name so
+		// the failure can point at it rather than report a missing manifest.
+		if legacy == "" {
+			if _, err := os.Stat(filepath.Join(dir, legacyManifestName)); err == nil {
+				legacy = dir
+			}
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			break
+		}
+		dir = parent
+	}
+	if legacy != "" {
+		return "", fmt.Errorf("no %s in %s or any parent, but %s has a %s: the manifest was renamed after v0.1.0. Rename it (mv %s %s) — the contents are unchanged",
+			manifestName, start, legacy, legacyManifestName, legacyManifestName, manifestName)
+	}
+	return "", fmt.Errorf("no %s in %s or any parent", manifestName, start)
+}
+
+// loadManifest finds the project root and reads the manifest there. It moves
+// the process into that root, so every relative path that follows — src/,
+// dist/, converter and pipeline scripts — resolves against the project rather
+// than against wherever the user happened to be standing. Every verb that
+// reads a manifest goes through here, so none of them has to think about it.
+func loadManifest() (*Manifest, error) {
+	root, err := findProjectRoot()
+	if err != nil {
+		return nil, err
+	}
+	cwd, err := os.Getwd()
+	if err != nil {
+		return nil, err
+	}
+	if root != cwd {
+		if err := os.Chdir(root); err != nil {
+			return nil, fmt.Errorf("entering project root %s: %w", root, err)
+		}
+		// The output below names paths like dist/ relative to the root, which
+		// is not where the user is standing — so say where that is.
+		fmt.Fprintf(os.Stderr, "ditto: project root %s\n", root)
 	}
 	var m Manifest
 	md, err := toml.DecodeFile(manifestName, &m)

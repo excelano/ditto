@@ -25,6 +25,12 @@ built — there is no implicit globbing. Each target names an input under `src/`
 an output under `dist/`, and optionally a style template, a view, or a custom
 converter.
 
+The manifest also marks the project root. `build`, `scan`, and `publish` walk up
+from wherever you are to the nearest `Ditto.toml`, so they work from inside
+`src/` or any other subdirectory rather than only at the top. Paths in the
+output stay relative to the root; when that is not where you are standing, ditto
+says which directory it settled on.
+
 ```toml
 [project]
 name = "parsolvo-assessment"

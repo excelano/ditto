@@ -12,7 +12,11 @@ are authoritative; this expands on them.
 - `dist/` — built deliverables. Gitignored by the scaffold. Overridable per
   project (see `dist` below). Outputs are named relative to it.
 - `Ditto.toml` — in the project root, authoritative. Not listed, not built.
-- Commands run from the project root (the directory holding `Ditto.toml`).
+- Commands work from anywhere inside the project. `build`, `scan`, and
+  `publish` walk up from the current directory to the nearest `Ditto.toml` the
+  way cargo finds `Cargo.toml`, then run from that root — so every path they
+  print or resolve is relative to the root, not to where you are standing. When
+  the two differ, ditto names the root on stderr.
 
 ## Manifest schema
 

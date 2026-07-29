@@ -61,7 +61,9 @@ first, in `src/`, then let ditto build.
 ## The manifest is authoritative
 
 `Ditto.toml` in the project root lists every deliverable. **If a file is not
-listed, it is not built** — there is no implicit globbing. A minimal project:
+listed, it is not built** — there is no implicit globbing. The verbs walk up to
+the nearest `Ditto.toml` like cargo, so they run from any subdirectory and their
+paths stay relative to the root. A minimal project:
 
 ```toml
 [project]
