@@ -151,14 +151,16 @@ selection lever; there is no per-file freshness check.
 **Expect on SharePoint:** the library rewrites Office files on upload (it binds
 them to a content type), so the stored bytes differ from what was sent and the
 remote size and hash never match your local copy again. The deliverable content
-is intact. **xsync 1.6.0 and later handle this** — change detection compares
+is intact. **A current xsync handles this** — change detection compares
 modification times and consults size only once the timestamp has moved, so an
-unchanged `.docx`/`.xlsx`/`.pptx` is skipped on the next publish. On xsync 1.5.x
-it re-uploaded every Office file on every publish and cut a new document version
-each time; if you still see that, check `xsync -V` before investigating further.
-To see why any file was picked, run `xsync --dry-run --itemize-changes` against
-the same source and destination — it labels each line `new`, `time`, `content`,
-or `forced`.
+unchanged `.docx`/`.xlsx`/`.pptx` is skipped on the next publish.
+
+If a publish keeps re-sending Office files that nobody edited, the xsync on
+`$PATH` predates that fix: it compared size too, so the rewritten bytes read as
+a change every run and cut a new document version each time. Confirm by checking
+whether `xsync --help` lists `--itemize-changes`; if it doesn't, upgrade. When it
+does, `xsync --dry-run --itemize-changes <dist> <root>` labels each line `new`,
+`time`, `content`, or `forced`, which answers why any particular file was picked.
 
 ## Install
 
