@@ -140,7 +140,9 @@ selection lever; there is no per-file freshness check.
   `--dry-run` (`-n`) and `--delete` through. `xsync` must be on `$PATH` (install
   [xfiles](https://github.com/excelano/xfiles)) or publish fails with that hint.
   Flags precede the positional arguments because `xsync` parses with Go's `flag`
-  package. Delete confirmations prompt on a TTY.
+  package. Delete confirmations prompt on a TTY. On a **dry run** ditto also
+  echoes the exact `xsync` invocation it is about to make, shell-quoted, so you
+  can paste it and add flags of your own — `--itemize-changes` most usefully.
 - Local root: a recursive overwrite copy; `--delete` prunes destination files
   with no counterpart in the source; `-n` previews.
 - Each target's `output` already encodes the destination subfolder and filename,

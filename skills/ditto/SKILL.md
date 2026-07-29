@@ -48,6 +48,8 @@ on `$PATH`:
 - [office-convert](https://github.com/anderix/nursery/tree/main/office-convert) — `md2docx`, `md2pptx`, `csv2xlsx` (pandoc + openpyxl).
 - [cleave](https://github.com/anderix/axe) — portable self-contained HTML.
 - [xsync](https://github.com/excelano/xfiles) — the SharePoint mirror, for `publish`.
+  Want **1.6.0 or newer**: earlier versions re-upload every Office file on every
+  publish (see the publish section of `reference.md`).
 
 So the boundary is: **ditto orchestrates; it is not the converter and not the
 SharePoint client.** Reach past ditto to a converter directly only for a genuine
