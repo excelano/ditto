@@ -9,11 +9,21 @@ import (
 )
 
 func cmdBuild(args []string) error {
+	force := false
 	var prefix string
-	if len(args) == 1 {
-		prefix = args[0]
-	} else if len(args) > 1 {
-		return fmt.Errorf("build takes at most one filter argument")
+	for _, a := range args {
+		switch a {
+		case "-f", "--force":
+			force = true
+		default:
+			if strings.HasPrefix(a, "-") {
+				return fmt.Errorf("build: unknown argument %q", a)
+			}
+			if prefix != "" {
+				return fmt.Errorf("build takes at most one filter argument")
+			}
+			prefix = a
+		}
 	}
 	m, err := loadManifest()
 	if err != nil {
@@ -42,8 +52,12 @@ func cmdBuild(args []string) error {
 		return err
 	}
 
-	built, failed := 0, 0
+	built, failed, fresh := 0, 0, 0
 	for _, t := range targets {
+		if !force && isFresh(t, dist) {
+			fresh++
+			continue
+		}
 		if err := buildTarget(t, dist); err != nil {
 			fmt.Fprintf(os.Stderr, "  FAILED %s: %v\n", t.Output, err)
 			failed++
@@ -51,11 +65,62 @@ func cmdBuild(args []string) error {
 		}
 		built++
 	}
-	fmt.Printf("Built %d of %d target(s) into %s/\n", built, len(targets), dist)
+	fmt.Printf("Built %d of %d target(s) into %s/", built, len(targets), dist)
+	if fresh > 0 {
+		fmt.Printf(" (%d up to date)", fresh)
+	}
+	fmt.Println()
 	if failed > 0 {
 		return fmt.Errorf("%d target(s) failed", failed)
 	}
 	return nil
+}
+
+// isFresh reports whether a target's output is already newer than everything
+// that feeds it, so the build can skip converting it again. Rebuilding a set of
+// deliverables is a pandoc call per target, which is the slow part of an
+// edit-build-look loop where usually one source changed.
+//
+// The comparison covers the inputs, the styling reference, the converter and
+// pipeline scripts when they are files in the project, and the manifest itself
+// — editing a target's view or reference must rebuild it just as editing the
+// source does. Anything missing or unreadable counts as stale, which lets
+// buildTarget produce the real error rather than this returning one.
+//
+// Two things are deliberately not tracked. A target with a pipeline always
+// rebuilds: the pipeline exists to generate or refresh inputs from somewhere
+// ditto cannot see, so its inputs' mtimes say nothing about whether the result
+// is current. And converters resolved from $PATH are not stat'd, so upgrading
+// pandoc or office-convert calls for `ditto build --force`.
+func isFresh(t Target, dist string) bool {
+	if len(t.Pipeline) > 0 {
+		return false
+	}
+	out, err := os.Stat(filepath.Join(dist, t.Output))
+	if err != nil {
+		return false
+	}
+	deps := []string{manifestName}
+	for _, in := range t.resolvedInputs() {
+		deps = append(deps, filepath.Join(srcDir, in))
+	}
+	if t.Reference != "" {
+		deps = append(deps, t.Reference)
+	}
+	if t.Converter != "" {
+		// Only a converter that is a file in the project can be compared; a
+		// bare $PATH command has no path to stat here.
+		if abs := resolveScript(t.Converter); filepath.IsAbs(abs) {
+			deps = append(deps, abs)
+		}
+	}
+	for _, dep := range deps {
+		info, err := os.Stat(dep)
+		if err != nil || info.ModTime().After(out.ModTime()) {
+			return false
+		}
+	}
+	return true
 }
 
 // checkDuplicateOutputs fails the build if two targets write the same output,

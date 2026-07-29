@@ -105,14 +105,23 @@ Anything outside that table needs a `converter` on the target (see
 | Verb | Does | Reach for it when |
 |---|---|---|
 | `ditto new <name>` | Scaffold `src/`, `dist/`, `Ditto.toml`, `.gitignore` | Starting a new deliverable project |
-| `ditto build [prefix]` | Build every target (or only those whose output is under `prefix/`) into `dist/` | Producing the Office/HTML files; iterating on one deliverable with a prefix |
+| `ditto init` | Same scaffold, in a directory that already holds sources | Adopting an existing folder of Markdown/CSV |
+| `ditto check` | Validate the manifest — inputs, references, scripts, converters on PATH — without building | After hand-editing the manifest; on a machine that may lack the converters |
+| `ditto build [prefix] [--force]` | Build every out-of-date target (or only those whose output is under `prefix/`) into `dist/` | Producing the Office/HTML files; iterating on one deliverable with a prefix |
 | `ditto scan [--write]` | Report `src/` files no target covers; `--write` appends a target per uncovered file with default output | After adding sources, to catch anything the manifest misses |
+| `ditto clean [-n]` | Remove `dist/` | Clearing outputs orphaned by a renamed target, before a publish |
 | `ditto publish [prefix] [-n] [--delete]` | Mirror `dist/` to the `[publish] root` (SharePoint via xsync, or a local copy) | Handing the built set to the client library |
 
-`build` is **not incremental** — every run reruns every selected target's
-pipeline and converter, with no up-to-date check (deliberate: a build is fully
-reproducible and the manifest is the only thing that decides what runs). When
-the redone work is expensive, scope it with a prefix: `ditto build "Deliverable 3"`.
+`build` **skips targets that are already up to date** — output newer than its
+inputs, reference, converter script, and the manifest. `--force` reconverts
+everything. Two exceptions: a target with a `pipeline` always rebuilds (the
+pipeline regenerates inputs from outside ditto's view), and converters on
+`$PATH` are not tracked, so `--force` once after upgrading pandoc. For a
+guaranteed-from-source set, `ditto clean && ditto build`.
+
+`clean` is the only thing that removes outputs. `build` only writes, so a
+renamed `output` leaves the old file in `dist/`, and `publish` without
+`--delete` would ship both — `check` names those orphans.
 
 `scan` with no flag only reports — the bare command tells you the state, it never
 mutates. `--write` appends (it does not rewrite the manifest), so hand-edited
@@ -123,11 +132,12 @@ for you to declare.
 ## The typical workflow
 
 ```sh
-ditto new client-assessment          # scaffold the project
-cd client-assessment
+ditto new client-assessment          # scaffold the project (or: cd into an
+cd client-assessment                 #   existing folder and run 'ditto init')
 # ... author sources under src/ (assessment.md, inventory.csv, ...) ...
 ditto scan --write                   # add a target per source, default outputs
 # ... hand-edit Ditto.toml: fix output names, add references, add a .pptx target ...
+ditto check                          # catch bad paths before converting anything
 ditto build                          # press everything into dist/
 ditto publish -n                     # preview the SharePoint mirror
 ditto publish                        # push dist/ to the library

@@ -157,15 +157,33 @@ converter = "converters/build_calendar.py"
 
 ```sh
 ditto new <name>      # scaffold src/, dist/, Ditto.toml, .gitignore
-ditto build           # build every target into dist/
+ditto init            # scaffold a project around the files already here
+ditto check           # validate the manifest without building anything
+ditto build           # build every target whose output is out of date
 ditto build <prefix>  # build only targets whose output is under <prefix>/
+ditto build --force   # rebuild every target, up to date or not
 ditto scan            # report files in src/ that no target covers
 ditto scan --write    # append a target per uncovered file, using defaults
+ditto clean           # remove the built deliverables in dist/
+ditto clean -n        # list what clean would remove, without removing it
 ditto publish         # mirror dist/ to the publish root
 ditto publish <prefix>  # mirror only dist/<prefix>/ to <root>/<prefix>/
 ditto publish -n      # preview the publish without writing anything
 ditto publish --delete  # also remove root files no longer in dist/
 ```
+
+`new` creates a project; `init` adopts one. Point `init` at a folder that
+already holds your sources and it writes the manifest, adds `dist/` to an
+existing `.gitignore` rather than replacing it, and leaves whatever is already
+in `src/` alone. Follow either with `ditto scan --write`.
+
+`check` answers "will this build?" without converting anything: every input
+exists, no two targets write the same output, every reference and pipeline
+script is where the manifest says, every output extension maps to a converter,
+and every converter that implies — `md2docx`, `csv2xlsx`, `cleave` — is
+installed on this machine. It also names files sitting in `dist/` that no
+target produces. Run it after hand-editing the manifest, and on any machine
+that has to build the project but may not have the same tools.
 
 On an engagement with many deliverables, a single manifest holds dozens of
 targets but you are usually iterating on one. `build` and `publish` take an
@@ -176,14 +194,20 @@ the root, so neither one pays the cost of touching every other deliverable. The
 prefix matches on a path boundary, so `D3` selects `D3/…` without also catching
 `D30/…`.
 
-The prefix is the only lever here: `build` always rebuilds every target it
-selects, rerunning each `pipeline` and converter with no freshness or
-up-to-date check. Unlike cargo, which skips crates that have not changed, ditto
-has no incremental mode — a plain `ditto build` reruns the whole derivation,
-slow extract/enrich steps included. That is deliberate: it keeps a build fully
-reproducible and the manifest the only thing that decides what runs. For a
-handful of deliverables the redone work is cheap; when it is not, scope the
-build to the one deliverable you are iterating on with a prefix.
+Within that selection, `build` skips targets that are already up to date, the
+way cargo skips crates that have not changed: a target is rebuilt when its
+output is older than any of its inputs, its styling reference, its converter
+script, or the manifest itself — so changing a target's `view` or `reference`
+rebuilds it just as editing the source does. `ditto build --force` reconverts
+everything regardless.
+
+Two things are deliberately outside that check. A target with a `pipeline`
+always rebuilds, because the pipeline exists to regenerate inputs from
+somewhere ditto cannot see and their timestamps prove nothing about whether the
+result is current. And converters found on `$PATH` are not tracked, so after
+upgrading pandoc or office-convert, run `--force` once to pick up the new
+output. When you want the guarantee rather than the speed, `ditto clean &&
+ditto build` reproduces the whole set from source.
 
 `publish` mirrors `dist/` to the `[publish] root`: a SharePoint library
 (through `xsync`) or, when the root is a filesystem path, a plain recursive
@@ -207,6 +231,13 @@ each uncovered file using the default output (`.md` to `.docx`, `.csv` to
 `.xlsx`), mirroring the `src/` tree. It appends rather than rewriting, so your
 hand-edited names and comments are left alone. The formats it cannot guess —
 `.md` to a deck, anything to HTML, unknown extensions — it leaves for you.
+
+`ditto clean` removes `dist/`. Nothing else does: `build` only ever writes, so
+renaming a target's `output` leaves the old file behind, and a later `publish`
+without `--delete` ships both the current deliverable and the stale one to the
+client library. `check` names those orphans and `clean` clears them. Because
+`dist` is configurable and `~` is expanded, clean refuses to remove the
+filesystem root, your home directory, or any directory containing the project.
 
 ## Install
 

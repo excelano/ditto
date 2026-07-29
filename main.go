@@ -17,10 +17,15 @@ built.
 
 Usage:
   ditto new <name>      Scaffold a new project (src/, dist/, Ditto.toml).
-  ditto build           Build every target in the manifest into dist/.
+  ditto init            Scaffold a project around the files already here.
+  ditto check           Validate the manifest without building anything.
+  ditto build           Build every target whose output is out of date.
   ditto build <prefix>  Build only targets whose output falls under <prefix>/.
+  ditto build --force   Rebuild every target, up to date or not.
   ditto scan            Report files in src/ that no target covers.
   ditto scan --write    Append a target for each uncovered file, using defaults.
+  ditto clean           Remove the built deliverables in dist/.
+  ditto clean -n        List what clean would remove, without removing it.
   ditto publish         Mirror dist/ to the publish root (SharePoint or local).
   ditto publish <prefix>  Mirror only dist/<prefix>/ to <root>/<prefix>/.
   ditto publish -n      Preview the publish without writing anything.
@@ -46,10 +51,16 @@ func main() {
 		fmt.Printf("ditto %s\n", version)
 	case "new":
 		err = cmdNew(args[1:])
+	case "init":
+		err = cmdInit(args[1:])
+	case "check":
+		err = cmdCheck(args[1:])
 	case "build":
 		err = cmdBuild(args[1:])
 	case "scan":
 		err = cmdScan(args[1:])
+	case "clean":
+		err = cmdClean(args[1:])
 	case "publish":
 		err = cmdPublish(args[1:])
 	default:

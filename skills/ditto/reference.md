@@ -113,8 +113,9 @@ non-zero exit failing the target. They run **before** the inputs are checked for
 existence, because they are what create those inputs, so `ditto build` reproduces
 the whole derivation rather than just the last hop. Same script resolution and
 executable+shebang rules as a converter. A pipeline belongs to its target; two
-targets that share a pipeline each run it (ditto rebuilds everything, tracking
-nothing).
+targets that share a pipeline each run it, and **a target with a pipeline is
+never skipped as up to date** — the pipeline refreshes inputs from outside the
+project, so their timestamps say nothing about whether the output is current.
 
 ```toml
 [[target]]
@@ -135,8 +136,53 @@ one slice of a many-deliverable manifest:
   matching `Deliverable 3/` subfolder of the root.
 
 The prefix matches on a **path boundary**, so `Deliverable 3` selects
-`Deliverable 3/…` without catching `Deliverable 30/…`. The prefix is the only
-selection lever; there is no per-file freshness check.
+`Deliverable 3/…` without catching `Deliverable 30/…`.
+
+## Freshness (`build`)
+
+Within whatever the prefix selects, a target is skipped when its output is
+newer than **all** of: every resolved input under `src/`, the effective
+`reference` (including a `[project]` default), the `converter` and `pipeline`
+scripts when those resolve to files in the project, and `Ditto.toml` itself.
+Anything missing or unreadable counts as stale, so a deleted input still
+reaches the build and produces a real error rather than being silently skipped.
+
+- `ditto build --force` (`-f`) reconverts everything selected.
+- Editing `view`, `reference`, or `converter` on a target rebuilds it, because
+  the manifest is one of the tracked inputs.
+- Converters resolved from `$PATH` (`md2docx`, `csv2xlsx`, `cleave`) are **not**
+  stat'd — after upgrading pandoc or office-convert, run `--force` once.
+- `ditto clean && ditto build` is the from-source guarantee.
+
+## `check`
+
+Validates without converting, and exits non-zero if anything would fail:
+missing inputs (skipped for `pipeline` targets, whose inputs do not exist yet),
+duplicate outputs, a missing `reference` or `[project]` default reference,
+`pipeline` and `converter` scripts that are absent or not executable, an
+(input ext → output ext) pair with no built-in and no `converter`, and any
+built-in converter command that is not on `$PATH`. It also emits notes, which
+do not fail the check: an empty `[project] name`, an empty manifest, and files
+in `dist/` that no target produces.
+
+## `clean`
+
+Removes the resolved `dist/` tree and reports the file count; `-n` / `--dry-run`
+reports without removing. It is the only verb that deletes local outputs —
+`build` only writes, so a renamed `output` orphans its predecessor in `dist/`,
+which `publish` would then ship. Because `dist` is overridable and `~`-expanded,
+clean refuses a `dist` that resolves to the filesystem root, the home directory,
+or any directory containing the project.
+
+## `new` vs `init`
+
+`new <name>` creates the directory and fails if it exists. `init` scaffolds the
+current directory instead, for a folder of sources that predates the decision to
+build it with ditto: it refuses if a `Ditto.toml` is already there, appends
+`/dist/` to an existing `.gitignore` rather than replacing it, leaves an
+occupied `src/` untouched (no `.gitkeep`), and takes the project name from the
+directory name. If a parent directory is also a ditto project, it says so —
+commands run in the new project will use the nearer manifest.
 
 ## `publish` behavior
 
