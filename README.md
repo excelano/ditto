@@ -185,6 +185,16 @@ installed on this machine. It also names files sitting in `dist/` that no
 target produces. Run it after hand-editing the manifest, and on any machine
 that has to build the project but may not have the same tools.
 
+It answers "will this publish?" too. SharePoint and OneDrive are
+case-preserving but case-insensitive, so outputs that differ only in case are
+two paths locally and one item in the library: two such files overwrite each
+other on upload with nothing reported, and two such folders merge. This is easy
+to create without noticing, because `scan --write` names outputs after the
+`src/` tree — a manifest with a hand-named `D3/…` target and a scanned `d3/…`
+one asks for a folder the library cannot give you twice. `check` reports the
+clash as an error when the manifest has an `https://` publish root, and as a
+note otherwise.
+
 On an engagement with many deliverables, a single manifest holds dozens of
 targets but you are usually iterating on one. `build` and `publish` take an
 optional prefix — the leading segment of an output path — to work on just that

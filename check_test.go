@@ -39,3 +39,56 @@ func TestOrphanOutputsNoDist(t *testing.T) {
 		t.Error("expected an error when dist/ does not exist, so check stays quiet")
 	}
 }
+
+// SharePoint is case-preserving but case-insensitive, so outputs that differ
+// only in case are one item there. The folder form is what a manifest mixing
+// hand-named "D3/…" targets with scanned "d3/…" ones produces.
+func TestCaseCollisions(t *testing.T) {
+	cases := []struct {
+		name    string
+		targets []Target
+		want    []collision
+	}{
+		{
+			name:    "distinct outputs",
+			targets: []Target{{Output: "D3/Report.docx"}, {Output: "D4/Register.xlsx"}},
+		},
+		{
+			name:    "same folder in two spellings",
+			targets: []Target{{Output: "D3/Report.docx"}, {Output: "d3/checklist.docx"}},
+			want:    []collision{{kind: "folder", spellings: `"D3" and "d3"`}},
+		},
+		{
+			name:    "same file in two spellings",
+			targets: []Target{{Output: "Report.docx"}, {Output: "report.DOCX"}},
+			want:    []collision{{kind: "file", spellings: `"Report.docx" and "report.DOCX"`}},
+		},
+		{
+			name:    "collision deep in the tree",
+			targets: []Target{{Output: "D3/Exhibits/a.docx"}, {Output: "D3/exhibits/b.docx"}},
+			want:    []collision{{kind: "folder", spellings: `"D3/Exhibits" and "D3/exhibits"`}},
+		},
+		{
+			// One spelling used many times is how a correct manifest looks.
+			name:    "repeated folder in one spelling",
+			targets: []Target{{Output: "D3/a.docx"}, {Output: "D3/b.docx"}, {Output: "D3/c.docx"}},
+		},
+		{
+			name:    "empty outputs are left to the per-target checks",
+			targets: []Target{{Output: ""}, {Output: ""}},
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := caseCollisions(tc.targets)
+			if len(got) != len(tc.want) {
+				t.Fatalf("collisions = %v, want %v", got, tc.want)
+			}
+			for i := range got {
+				if got[i] != tc.want[i] {
+					t.Errorf("collision %d = %+v, want %+v", i, got[i], tc.want[i])
+				}
+			}
+		})
+	}
+}

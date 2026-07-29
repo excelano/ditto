@@ -165,6 +165,17 @@ built-in converter command that is not on `$PATH`. It also emits notes, which
 do not fail the check: an empty `[project] name`, an empty manifest, and files
 in `dist/` that no target produces.
 
+**Case collisions.** Outputs whose paths differ only in case — `D3/…` and
+`d3/…`, `Report.docx` and `report.docx` — are distinct locally and a single
+item on SharePoint, which is case-preserving but case-insensitive. Colliding
+files overwrite each other on publish with nothing reported; colliding folders
+merge into whichever spelling the library already holds, and `xsync` reports a
+`nameAlreadyExists` failure for the other. Both file-level and folder-level
+clashes are reported, at every depth. Because the hazard is the destination's,
+this is an **error** when `[publish] root` is an `https://` URL and a **note**
+otherwise. The usual source is mixing hand-named outputs with `scan --write`
+ones, which mirror the `src/` tree's spelling.
+
 ## `clean`
 
 Removes the resolved `dist/` tree and reports the file count; `-n` / `--dry-run`

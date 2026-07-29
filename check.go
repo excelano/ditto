@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -65,6 +66,17 @@ func cmdCheck(args []string) error {
 		for _, o := range orphans {
 			note("%s is in %s/ but no target produces it; 'ditto clean' clears it", o, dist)
 		}
+	}
+
+	// A case-only difference is two paths locally and one on SharePoint. It is
+	// a real fault when there is a remote root to publish to and merely untidy
+	// otherwise, so it fails the check only in the first case.
+	report := note
+	if m.Publish != nil && isRemote(m.Publish.Root) {
+		report = problem
+	}
+	for _, c := range caseCollisions(m.Targets) {
+		report("%s, which a SharePoint library treats as one %s", c.spellings, c.kind)
 	}
 
 	for _, n := range notes {
@@ -150,14 +162,14 @@ func orphanOutputs(targets []Target, dist string) ([]string, error) {
 		}
 	}
 	var orphans []string
-	err := filepath.WalkDir(dist, func(path string, d fs.DirEntry, err error) error {
+	err := filepath.WalkDir(dist, func(file string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 		if d.IsDir() || strings.HasPrefix(d.Name(), ".") {
 			return nil
 		}
-		rel, err := filepath.Rel(dist, path)
+		rel, err := filepath.Rel(dist, file)
 		if err != nil {
 			return err
 		}
@@ -174,7 +186,74 @@ func orphanOutputs(targets []Target, dist string) ([]string, error) {
 	return orphans, nil
 }
 
-func sortedKeys(m map[string][]string) []string {
+// collision is one set of output paths that a case-insensitive destination
+// cannot tell apart.
+type collision struct {
+	kind      string // "file" or "folder"
+	spellings string // the differing spellings, quoted and joined
+}
+
+// caseCollisions finds outputs that differ only by case. A local filesystem
+// keeps them apart; SharePoint and OneDrive are case-preserving but
+// case-insensitive, so they are the same item there. Two files that collide
+// overwrite each other on publish with nothing reported, and two folders merge
+// their contents into whichever spelling the library already has.
+//
+// The folder case is the one that shows up in practice: `ditto scan --write`
+// derives outputs from the src/ tree, so a manifest that mixes hand-named
+// "D3/…" targets with scanned "d3/…" ones asks for two folders that the library
+// sees as one.
+func caseCollisions(targets []Target) []collision {
+	files := map[string]map[string]bool{}   // lower-cased path -> spellings seen
+	folders := map[string]map[string]bool{} // lower-cased dir  -> spellings seen
+
+	add := func(index map[string]map[string]bool, p string) {
+		key := strings.ToLower(p)
+		if index[key] == nil {
+			index[key] = map[string]bool{}
+		}
+		index[key][p] = true
+	}
+	for _, t := range targets {
+		if t.Output == "" {
+			continue
+		}
+		out := filepath.ToSlash(filepath.Clean(t.Output))
+		add(files, out)
+		for dir := path.Dir(out); dir != "." && dir != "/"; dir = path.Dir(dir) {
+			add(folders, dir)
+		}
+	}
+
+	var found []collision
+	for _, c := range []struct {
+		kind  string
+		index map[string]map[string]bool
+	}{{"file", files}, {"folder", folders}} {
+		for _, key := range sortedKeys(c.index) {
+			if len(c.index[key]) < 2 {
+				continue
+			}
+			found = append(found, collision{kind: c.kind, spellings: quotedList(c.index[key])})
+		}
+	}
+	return found
+}
+
+// quotedList renders the differing spellings in a stable order, so the same
+// manifest always produces the same message.
+func quotedList(set map[string]bool) string {
+	items := make([]string, 0, len(set))
+	for s := range set {
+		items = append(items, `"`+s+`"`)
+	}
+	sort.Strings(items)
+	return strings.Join(items, " and ")
+}
+
+// sortedKeys keeps every list check prints in a stable order, so the same
+// manifest always produces the same report.
+func sortedKeys[V any](m map[string]V) []string {
 	keys := make([]string, 0, len(m))
 	for k := range m {
 		keys = append(keys, k)

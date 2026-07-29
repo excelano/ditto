@@ -106,7 +106,7 @@ Anything outside that table needs a `converter` on the target (see
 |---|---|---|
 | `ditto new <name>` | Scaffold `src/`, `dist/`, `Ditto.toml`, `.gitignore` | Starting a new deliverable project |
 | `ditto init` | Same scaffold, in a directory that already holds sources | Adopting an existing folder of Markdown/CSV |
-| `ditto check` | Validate the manifest — inputs, references, scripts, converters on PATH — without building | After hand-editing the manifest; on a machine that may lack the converters |
+| `ditto check` | Validate the manifest — inputs, references, scripts, converters on PATH, outputs colliding case-insensitively — without building | After hand-editing the manifest; before a first publish; on a machine that may lack the converters |
 | `ditto build [prefix] [--force]` | Build every out-of-date target (or only those whose output is under `prefix/`) into `dist/` | Producing the Office/HTML files; iterating on one deliverable with a prefix |
 | `ditto scan [--write]` | Report `src/` files no target covers; `--write` appends a target per uncovered file with default output | After adding sources, to catch anything the manifest misses |
 | `ditto clean [-n]` | Remove `dist/` | Clearing outputs orphaned by a renamed target, before a publish |
