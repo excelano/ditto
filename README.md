@@ -301,10 +301,12 @@ go build -o ~/bin/ditto .
 
 ditto is a single Go binary with no runtime dependencies of its own; the
 converters it calls are separate packages. `apt install ditto` recommends
-[office-convert](https://github.com/excelano/office-convert), which supplies
-`md2docx`, `md2pptx`, and `csv2xlsx` and pulls in pandoc, so the Word, Excel,
-and PowerPoint targets work out of the box. `cleave` (HTML) and `xsync`
-(publish) are installed separately; `ditto check` names whichever are missing.
+both of them — [office-convert](https://github.com/excelano/office-convert),
+which supplies `md2docx`, `md2pptx`, and `csv2xlsx` and pulls in pandoc, and
+[cleave](https://github.com/excelano/axe), which bakes the portable HTML — so
+every built-in output format works out of the box. `xsync` is suggested rather
+than recommended, since it is needed only to publish; install it with
+`apt install xfiles`. `ditto check` names whichever are missing.
 
 ## Claude Code skill
 

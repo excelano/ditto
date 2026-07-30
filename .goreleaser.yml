@@ -57,15 +57,17 @@ nfpms:
     section: utils
     priority: optional
     bindir: /usr/bin
-    # office-convert supplies md2docx/md2pptx/csv2xlsx — the converters behind
-    # every Office target — so it is recommended rather than suggested: apt
-    # installs it by default, and --no-install-recommends still gets the bare
-    # conductor for someone who brings their own converters. pandoc is not named
-    # here because office-convert depends on it directly. xsync (packaged as
-    # xfiles) is only needed to publish, and cleave is not an apt package yet,
-    # so both stay softer.
+    # Between them, office-convert (md2docx/md2pptx/csv2xlsx) and cleave (html)
+    # are every built-in converter ditto has, so both are recommended rather
+    # than suggested: apt installs them by default and a fresh `apt install
+    # ditto` can build every output format the manifest allows, while
+    # --no-install-recommends still gets the bare conductor for someone who
+    # brings their own converters. pandoc is not named here because
+    # office-convert depends on it directly. xsync (packaged as xfiles) stays a
+    # suggestion — it is needed only to publish, not to build.
     recommends:
       - office-convert
+      - cleave
     suggests:
       - xfiles
     contents:
