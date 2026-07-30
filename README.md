@@ -142,8 +142,10 @@ arguments, failing the target on the first non-zero exit. They run before the
 inputs are checked for existence, because they are what produce those inputs, so
 `ditto build` reproduces the whole derivation rather than just the last hop. A
 pipeline belongs to its target and runs whenever that target builds; two targets
-that share the same pipeline each run it, in keeping with ditto rebuilding
-everything rather than tracking what is already up to date.
+that share the same pipeline each run it. A target with a pipeline is never
+considered up to date, because the pipeline produces its inputs from somewhere
+ditto cannot see, so their timestamps say nothing about whether the output is
+current.
 
 ```toml
 [[target]]
