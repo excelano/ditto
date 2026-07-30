@@ -113,13 +113,18 @@ Anything outside that table needs a `converter` on the target (see
 | `ditto publish [prefix] [-n] [--delete]` | Mirror `dist/` to the `[publish] root` (SharePoint via xsync, or a local copy) | Handing the built set to the client library |
 
 `build` **skips targets that are already up to date** — output newer than its
-inputs, reference, converter script, and the manifest. `--force` reconverts
-everything. Two exceptions: a target with a `pipeline` always rebuilds (the
-pipeline regenerates inputs from outside ditto's view), and converters on
-`$PATH` are not tracked, so `--force` once after upgrading pandoc. For a
-guaranteed-from-source set, `ditto clean && ditto build`. `-n` / `--dry-run`
-lists the targets that decision selects and runs neither converter nor
-pipeline, which is the safe way to see the blast radius of a `--force`.
+inputs, reference, and converter script, and built from the same manifest entry
+it still has. Editing or adding one target therefore rebuilds that target alone,
+not the whole set. `--force` reconverts everything. Two exceptions: a target
+with a `pipeline` always rebuilds (the pipeline regenerates inputs from outside
+ditto's view), and converters on `$PATH` are not tracked, so `--force` once
+after upgrading pandoc. For a guaranteed-from-source set, `ditto clean && ditto
+build`. `-n` / `--dry-run` lists the targets that decision selects and runs
+neither converter nor pipeline, which is the safe way to see the blast radius of
+a `--force`.
+
+`build` keeps its record of that in `.ditto/` at the project root — gitignored,
+removed by `clean`, never hand-edited or committed.
 
 Every command takes `-h` / `--help`; `ditto <command> --help` is authoritative
 over this table.

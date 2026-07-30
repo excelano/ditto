@@ -211,13 +211,27 @@ prefix matches on a path boundary, so `D3` selects `D3/…` without also catchin
 `D30/…`.
 
 Within that selection, `build` skips targets that are already up to date, the
-way cargo skips crates that have not changed: a target is rebuilt when its
-output is older than any of its inputs, its styling reference, its converter
-script, or the manifest itself — so changing a target's `view` or `reference`
-rebuilds it just as editing the source does. `ditto build --force` reconverts
-everything regardless, and `ditto build -n` answers which targets that decision
-selects without running a converter or a pipeline — the question worth asking
-before a `--force` across an engagement's worth of deliverables.
+way cargo skips crates that have not changed. A target is rebuilt when its
+output is older than any of its inputs, its styling reference, or its converter
+script, and also when its own entry in the manifest has changed since it was
+last built — so editing a target's `view` or `reference` rebuilds it just as
+editing the source does, while adding a target, or renaming another one's
+output, leaves it alone. `ditto build --force` reconverts everything regardless,
+and `ditto build -n` answers which targets that decision selects without running
+a converter or a pipeline — the question worth asking before a `--force` across
+an engagement's worth of deliverables.
+
+Answering that second question needs something on disk, because one timestamp
+on `Ditto.toml` says the file was edited and not which of its targets the edit
+touched. `build` therefore records a fingerprint of each entry it builds under
+`.ditto/`, alongside `dist/` in the `.gitignore` that `new` and `init` write.
+The directory is ditto's bookkeeping and holds nothing you wrote; it sits at the
+project root rather than inside `dist/` because `publish` mirrors `dist/`
+verbatim to the destination, so anything kept there would ship with the
+deliverables. It is also deliberately weak: it can only ever hold a target back
+for rebuilding, never declare one current on its own, so deleting it costs one
+extra rebuild and nothing else. `ditto clean` removes it along with the outputs
+it describes.
 
 Two things are deliberately outside that check. A target with a `pipeline`
 always rebuilds, because the pipeline exists to regenerate inputs from

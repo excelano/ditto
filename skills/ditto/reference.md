@@ -141,23 +141,32 @@ The prefix matches on a **path boundary**, so `Deliverable 3` selects
 
 ## Freshness (`build`)
 
-Within whatever the prefix selects, a target is skipped when its output is
-newer than **all** of: every resolved input under `src/`, the effective
-`reference` (including a `[project]` default), the `converter` and `pipeline`
-scripts when those resolve to files in the project, and `Ditto.toml` itself.
-Anything missing or unreadable counts as stale, so a deleted input still
-reaches the build and produces a real error rather than being silently skipped.
+Within whatever the prefix selects, a target is skipped when both checks pass.
+Its output must be newer than **all** of: every resolved input under `src/`, the
+effective `reference` (including a `[project]` default), and the `converter` and
+`pipeline` scripts when those resolve to files in the project. And its own entry
+in `Ditto.toml` must be unchanged since it was last built. Anything missing or
+unreadable counts as stale, so a deleted input still reaches the build and
+produces a real error rather than being silently skipped.
 
 - `ditto build --force` (`-f`) reconverts everything selected.
 - `ditto build --dry-run` (`-n`) prints the same `input -> output` lines a real
   build would and stops there: no converter runs, and no `pipeline` runs, so it
   is safe against a pipeline that writes into `src/`. Combine with `--force` to
   see the full set rather than only the stale ones.
-- Editing `view`, `reference`, or `converter` on a target rebuilds it, because
-  the manifest is one of the tracked inputs.
+- Editing `view`, `reference`, or `converter` on a target rebuilds that target.
+  Editing a **different** target, or adding one, does not — the comparison is
+  per entry, not against the manifest's timestamp.
 - Converters resolved from `$PATH` (`md2docx`, `csv2xlsx`, `cleave`) are **not**
   stat'd — after upgrading pandoc or office-convert, run `--force` once.
 - `ditto clean && ditto build` is the from-source guarantee.
+
+The per-entry comparison is backed by `.ditto/fingerprints.json` at the project
+root, written by `build` and removed by `clean`, gitignored by `new`/`init`. It
+is not in `dist/` because `publish` mirrors `dist/` verbatim. Losing or deleting
+it forces one full rebuild and nothing worse: it can withhold freshness but
+never grant it, and the timestamp comparison above always has to pass on its
+own. Do not hand-edit it, and do not commit it.
 
 ## `check`
 

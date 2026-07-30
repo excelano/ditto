@@ -54,9 +54,10 @@ func cmdBuild(args []string) error {
 		return err
 	}
 
-	built, failed, fresh := 0, 0, 0
+	fps := loadFingerprints()
+	built, failed, fresh, recorded := 0, 0, 0, false
 	for _, t := range targets {
-		if !force && isFresh(t, dist) {
+		if !force && isFresh(t, dist, fps) {
 			fresh++
 			continue
 		}
@@ -73,7 +74,17 @@ func cmdBuild(args []string) error {
 			failed++
 			continue
 		}
+		// Only a target that actually converted is recorded, so a failure is
+		// retried on the next build rather than remembered as done. A dry run
+		// records nothing at all: it built nothing.
+		fps.record(t)
+		recorded = true
 		built++
+	}
+	if recorded {
+		if err := fps.save(); err != nil {
+			fmt.Fprintf(os.Stderr, "ditto: warning: could not record build state (%v); the targets just built may rebuild next time\n", err)
+		}
 	}
 	verb := "Built"
 	if dryRun {
@@ -103,22 +114,32 @@ func srcInputs(t Target) []string {
 }
 
 // isFresh reports whether a target's output is already newer than everything
-// that feeds it, so the build can skip converting it again. Rebuilding a set of
-// deliverables is a pandoc call per target, which is the slow part of an
-// edit-build-look loop where usually one source changed.
+// that feeds it and was built from the manifest entry that still describes it,
+// so the build can skip converting it again. Rebuilding a set of deliverables
+// is a pandoc call per target, which is the slow part of an edit-build-look
+// loop where usually one source changed.
 //
-// The comparison covers the inputs, the styling reference, the converter and
-// pipeline scripts when they are files in the project, and the manifest itself
-// — editing a target's view or reference must rebuild it just as editing the
-// source does. Anything missing or unreadable counts as stale, which lets
-// buildTarget produce the real error rather than this returning one.
+// Two checks, and both must pass. The timestamps cover the inputs, the styling
+// reference, and the converter and pipeline scripts when they are files in the
+// project. The fingerprint covers the manifest entry itself, because editing a
+// target's view, reference, or converter changes the result without touching
+// any file the timestamps watch. Splitting the second question out of the first
+// is what lets an edit to one target leave the other forty-nine alone; comparing
+// against the manifest's own mtime, as this once did, could only say that
+// something in the file had changed and therefore rebuilt everything.
+//
+// The timestamps stay authoritative and the fingerprint only ever withholds
+// freshness, never grants it, so losing the recorded state costs a rebuild
+// rather than a stale deliverable. Anything missing or unreadable counts as
+// stale too, which lets buildTarget produce the real error rather than this
+// returning one.
 //
 // Two things are deliberately not tracked. A target with a pipeline always
 // rebuilds: the pipeline exists to generate or refresh inputs from somewhere
 // ditto cannot see, so its inputs' mtimes say nothing about whether the result
 // is current. And converters resolved from $PATH are not stat'd, so upgrading
 // pandoc or office-convert calls for `ditto build --force`.
-func isFresh(t Target, dist string) bool {
+func isFresh(t Target, dist string, fps fingerprints) bool {
 	if len(t.Pipeline) > 0 {
 		return false
 	}
@@ -126,7 +147,7 @@ func isFresh(t Target, dist string) bool {
 	if err != nil {
 		return false
 	}
-	deps := []string{manifestName}
+	var deps []string
 	for _, in := range t.resolvedInputs() {
 		deps = append(deps, filepath.Join(srcDir, in))
 	}
@@ -146,7 +167,7 @@ func isFresh(t Target, dist string) bool {
 			return false
 		}
 	}
-	return true
+	return fps.matches(t)
 }
 
 // checkDuplicateOutputs fails the build if two targets write the same output,

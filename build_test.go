@@ -1,18 +1,20 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
 
-// freshProject lays out a project where the output is newer than every input,
-// which is the state a build has just left behind.
-func freshProject(t *testing.T) (dir string, target Target) {
+// freshProject lays out a project where the output is newer than every input
+// and its manifest entry is the one on record, which is the state a build has
+// just left behind.
+func freshProject(t *testing.T) (target Target, fps fingerprints) {
 	t.Helper()
-	dir = t.TempDir()
-	t.Chdir(dir)
+	t.Chdir(t.TempDir())
 
 	mustWrite(t, manifestName, "[project]\nname = \"demo\"\n")
 	mustWrite(t, filepath.Join(srcDir, "report.md"), "# Report\n")
@@ -23,7 +25,10 @@ func freshProject(t *testing.T) (dir string, target Target) {
 	touch(t, filepath.Join(srcDir, "report.md"), old)
 	touch(t, filepath.Join(distDir, "Report.docx"), time.Now())
 
-	return dir, Target{Input: "report.md", Output: "Report.docx"}
+	target = Target{Input: "report.md", Output: "Report.docx"}
+	fps = fingerprints{}
+	fps.record(target)
+	return target, fps
 }
 
 func mustWrite(t *testing.T, path, body string) {
@@ -44,46 +49,68 @@ func touch(t *testing.T, path string, when time.Time) {
 }
 
 func TestIsFreshWhenOutputIsNewest(t *testing.T) {
-	_, target := freshProject(t)
-	if !isFresh(target, distDir) {
+	target, fps := freshProject(t)
+	if !isFresh(target, distDir, fps) {
 		t.Error("a target whose output postdates its input should be skipped")
 	}
 }
 
 func TestIsFreshStaleInput(t *testing.T) {
-	_, target := freshProject(t)
+	target, fps := freshProject(t)
 	touch(t, filepath.Join(srcDir, "report.md"), time.Now().Add(time.Minute))
-	if isFresh(target, distDir) {
+	if isFresh(target, distDir, fps) {
 		t.Error("editing the source must rebuild")
 	}
 }
 
 // Editing a target's view, reference, or converter changes the result without
-// touching any source file, so the manifest counts as an input.
-func TestIsFreshStaleManifest(t *testing.T) {
-	_, target := freshProject(t)
+// touching any source file, so the entry itself is compared.
+func TestIsFreshStaleTargetEntry(t *testing.T) {
+	target, fps := freshProject(t)
+	target.View = "slides"
+	if isFresh(target, distDir, fps) {
+		t.Error("editing the target's manifest entry must rebuild")
+	}
+}
+
+// The reason the entry is fingerprinted rather than the manifest's mtime taken
+// as the answer: an edit elsewhere in a manifest of fifty targets must not
+// reconvert the forty-nine it did not touch.
+func TestIsFreshSurvivesUnrelatedManifestEdits(t *testing.T) {
+	target, fps := freshProject(t)
 	touch(t, manifestName, time.Now().Add(time.Minute))
-	if isFresh(target, distDir) {
-		t.Error("editing the manifest must rebuild")
+	if !isFresh(target, distDir, fps) {
+		t.Error("touching the manifest without changing this target must leave it up to date")
+	}
+}
+
+// State that was never recorded, or that has been thrown away, may only cost a
+// rebuild — it must never be read as confirmation that the output is current.
+func TestIsFreshWithoutRecordedState(t *testing.T) {
+	target, _ := freshProject(t)
+	if isFresh(target, distDir, fingerprints{}) {
+		t.Error("an unrecorded target must rebuild rather than be assumed fresh")
 	}
 }
 
 func TestIsFreshMissingOutput(t *testing.T) {
-	_, target := freshProject(t)
+	target, fps := freshProject(t)
 	if err := os.Remove(filepath.Join(distDir, "Report.docx")); err != nil {
 		t.Fatal(err)
 	}
-	if isFresh(target, distDir) {
+	if isFresh(target, distDir, fps) {
 		t.Error("a missing output must rebuild")
 	}
 }
 
 func TestIsFreshStaleReference(t *testing.T) {
-	_, target := freshProject(t)
+	target, _ := freshProject(t)
 	mustWrite(t, "brand/house.docx", "template")
 	touch(t, "brand/house.docx", time.Now().Add(time.Minute))
 	target.Reference = "brand/house.docx"
-	if isFresh(target, distDir) {
+	fps := fingerprints{}
+	fps.record(target)
+	if isFresh(target, distDir, fps) {
 		t.Error("a restyled reference must rebuild the documents that use it")
 	}
 }
@@ -91,9 +118,11 @@ func TestIsFreshStaleReference(t *testing.T) {
 // A pipeline refreshes its inputs from somewhere ditto cannot see, so mtimes
 // cannot prove the output is current.
 func TestIsFreshNeverForPipelineTargets(t *testing.T) {
-	_, target := freshProject(t)
+	target, _ := freshProject(t)
 	target.Pipeline = []string{"extract.sh"}
-	if isFresh(target, distDir) {
+	fps := fingerprints{}
+	fps.record(target)
+	if isFresh(target, distDir, fps) {
 		t.Error("a target with a pipeline must always rebuild")
 	}
 }
@@ -101,11 +130,11 @@ func TestIsFreshNeverForPipelineTargets(t *testing.T) {
 // A missing input is left for buildTarget to report, so it must not be
 // mistaken for a fresh target and skipped silently.
 func TestIsFreshMissingInput(t *testing.T) {
-	_, target := freshProject(t)
+	target, fps := freshProject(t)
 	if err := os.Remove(filepath.Join(srcDir, "report.md")); err != nil {
 		t.Fatal(err)
 	}
-	if isFresh(target, distDir) {
+	if isFresh(target, distDir, fps) {
 		t.Error("a missing input must fall through to the build for a real error")
 	}
 }
@@ -163,5 +192,159 @@ func TestBuildWithoutDryRunRunsTheConverter(t *testing.T) {
 	}
 	if _, err := os.Stat("pipeline-ran"); err != nil {
 		t.Error("a real build must run the pipeline")
+	}
+}
+
+// twoTargets is a project of two independent deliverables, the smallest shape
+// in which "rebuild only what changed" means anything.
+const twoTargets = `[project]
+name = "demo"
+
+[[target]]
+input = "a.md"
+output = "A.txt"
+converter = "convert.sh"
+%s
+[[target]]
+input = "b.md"
+output = "B.txt"
+converter = "convert.sh"
+`
+
+// countingProject gives the project a converter that records every invocation,
+// so the tests below can ask what the build actually ran rather than what it
+// reported.
+func countingProject(t *testing.T, manifest string) {
+	t.Helper()
+	t.Chdir(t.TempDir())
+	mustWrite(t, manifestName, manifest)
+	mustWrite(t, filepath.Join(srcDir, "a.md"), "# A\n")
+	mustWrite(t, filepath.Join(srcDir, "b.md"), "# B\n")
+	mustWrite(t, "convert.sh", "#!/bin/sh\nprintf '%s\\n' \"$2\" >> converted.log\ncp \"$1\" \"$2\"\n")
+	if err := os.Chmod("convert.sh", 0o755); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// conversions returns the outputs the converter has been called for, in order.
+func conversions(t *testing.T) []string {
+	t.Helper()
+	body, err := os.ReadFile("converted.log")
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		t.Fatal(err)
+	}
+	return strings.Fields(string(body))
+}
+
+func TestBuildSkipsWhatItAlreadyBuilt(t *testing.T) {
+	countingProject(t, fmt.Sprintf(twoTargets, ""))
+
+	if err := cmdBuild(nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := conversions(t); len(got) != 2 {
+		t.Fatalf("first build converted %v, want both targets", got)
+	}
+	if err := cmdBuild(nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := conversions(t); len(got) != 2 {
+		t.Errorf("second build converted %v; nothing changed, so it should have converted nothing", got)
+	}
+}
+
+// The whole point of the change: editing one target's entry must reconvert that
+// target and leave every other one alone, where before it reconverted the lot.
+func TestBuildAfterManifestEditRebuildsOnlyTheEditedTarget(t *testing.T) {
+	countingProject(t, fmt.Sprintf(twoTargets, ""))
+	if err := cmdBuild(nil); err != nil {
+		t.Fatal(err)
+	}
+
+	mustWrite(t, manifestName, fmt.Sprintf(twoTargets, "view = \"slides\"\n"))
+	if err := cmdBuild(nil); err != nil {
+		t.Fatal(err)
+	}
+
+	got := conversions(t)
+	if len(got) != 3 {
+		t.Fatalf("converted %v, want one rebuild on top of the first two", got)
+	}
+	if want := filepath.Join(distDir, "A.txt"); got[2] != want {
+		t.Errorf("rebuilt %s, want the edited target %s", got[2], want)
+	}
+}
+
+// --force is the escape hatch for everything freshness cannot see, so it must
+// ignore the recorded state as well as the timestamps.
+func TestBuildForceIgnoresRecordedState(t *testing.T) {
+	countingProject(t, fmt.Sprintf(twoTargets, ""))
+	if err := cmdBuild(nil); err != nil {
+		t.Fatal(err)
+	}
+	if err := cmdBuild([]string{"--force"}); err != nil {
+		t.Fatal(err)
+	}
+	if got := conversions(t); len(got) != 4 {
+		t.Errorf("converted %v, want both targets converted twice", got)
+	}
+}
+
+// A filtered build visits only part of the manifest, so it must merge into the
+// recorded state rather than replace it — otherwise `ditto build D3` would
+// forget every other deliverable and the next full build would redo them all.
+func TestFilteredBuildKeepsTheOtherTargetsState(t *testing.T) {
+	countingProject(t, fmt.Sprintf(twoTargets, ""))
+	if err := cmdBuild(nil); err != nil {
+		t.Fatal(err)
+	}
+	if err := cmdBuild([]string{"A.txt"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := cmdBuild(nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := conversions(t); len(got) != 2 {
+		t.Errorf("converted %v; a filtered build must not discard what it did not look at", got)
+	}
+}
+
+// A dry run reports a decision without acting on it, so it must not leave state
+// claiming the targets were built.
+func TestDryRunRecordsNothing(t *testing.T) {
+	countingProject(t, fmt.Sprintf(twoTargets, ""))
+	if err := cmdBuild([]string{"--dry-run"}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(fingerprintPath()); err == nil {
+		t.Error("a dry run recorded build state for outputs it never wrote")
+	}
+	if err := cmdBuild(nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := conversions(t); len(got) != 2 {
+		t.Errorf("converted %v; the real build after a dry run must still do the work", got)
+	}
+}
+
+// A target that failed has no output worth remembering: the next build must
+// retry it rather than treat the failure as done.
+func TestFailedTargetIsNotRecorded(t *testing.T) {
+	countingProject(t, fmt.Sprintf(twoTargets, ""))
+	mustWrite(t, "convert.sh", "#!/bin/sh\nprintf '%s\\n' \"$2\" >> converted.log\nexit 1\n")
+	if err := os.Chmod("convert.sh", 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := cmdBuild(nil); err == nil {
+		t.Fatal("a converter that exits non-zero must fail the build")
+	}
+	if err := cmdBuild(nil); err == nil {
+		t.Fatal("the retry must fail too")
+	}
+	if got := conversions(t); len(got) != 4 {
+		t.Errorf("converted %v, want both targets attempted on both builds", got)
 	}
 }

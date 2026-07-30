@@ -63,8 +63,10 @@ Usage:
   ditto build [<prefix>] [flags]
 
 A target rebuilds when its output is older than its inputs, its styling
-reference, its converter script, or the manifest itself. Give a <prefix> to
-build only targets whose output falls under that directory.
+reference, or its converter script, and when its own entry in the manifest has
+changed since it was last built. Editing or adding one target therefore leaves
+the others alone. Give a <prefix> to build only targets whose output falls
+under that directory.
 
 Converters resolved from $PATH are not tracked, so upgrading pandoc or
 office-convert calls for --force once.
@@ -97,6 +99,9 @@ Nothing else removes them: build only ever writes, so an output renamed in the
 manifest leaves the old file behind, and publish without --delete then ships
 both the current deliverable and the stale one. Cleaning and rebuilding leaves
 exactly what the manifest describes.
+
+It also removes .ditto/, where build records what it has already made, so the
+next build reconverts the whole set from source.
 
 Flags:
   -n, --dry-run    List what clean would remove, without removing it.

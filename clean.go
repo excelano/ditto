@@ -13,6 +13,12 @@ import (
 // dist/, and `publish` without --delete then ships both the current deliverable
 // and the stale one. Cleaning and rebuilding leaves exactly what the manifest
 // describes.
+//
+// It takes the recorded fingerprints with it. They describe outputs that are
+// about to stop existing, and clearing them is the way to force the build to
+// distrust its own state — the reason the count reported below covers only
+// dist/ is that the state directory is ditto's bookkeeping and not anything the
+// user put there.
 func cmdClean(args []string) error {
 	dryRun := false
 	for _, a := range args {
@@ -41,6 +47,13 @@ func cmdClean(args []string) error {
 	}
 
 	if _, err := os.Stat(absDist); err != nil {
+		// State can outlive the outputs it describes — a hand-deleted dist/,
+		// or a dist moved in the manifest — so clear it even here.
+		if !dryRun {
+			if err := os.RemoveAll(stateDir); err != nil {
+				return err
+			}
+		}
 		fmt.Printf("Nothing to clean: no %s/\n", dist)
 		return nil
 	}
@@ -53,6 +66,9 @@ func cmdClean(args []string) error {
 		return nil
 	}
 	if err := os.RemoveAll(absDist); err != nil {
+		return err
+	}
+	if err := os.RemoveAll(stateDir); err != nil {
 		return err
 	}
 	fmt.Printf("Removed %s/ (%d file(s)).\n", dist, files)

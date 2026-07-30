@@ -80,27 +80,36 @@ func scaffold(dir, name string) error {
 	return ensureGitkeep(filepath.Join(dir, srcDir))
 }
 
-// ensureGitignore makes sure dist/ is ignored without discarding rules the
-// directory already had.
+// ensureGitignore makes sure the build's outputs and its recorded state are
+// ignored without discarding rules the directory already had. Both are products
+// of a build rather than things anyone wrote, and both are reproduced by
+// rerunning it.
 func ensureGitignore(path string) error {
 	existing, err := os.ReadFile(path)
-	if err != nil {
-		if !os.IsNotExist(err) {
-			return err
-		}
-		return os.WriteFile(path, []byte("/"+distDir+"/\n"), 0o644)
+	if err != nil && !os.IsNotExist(err) {
+		return err
 	}
+	ignored := map[string]bool{}
 	for _, line := range strings.Split(string(existing), "\n") {
-		switch strings.TrimSpace(line) {
-		case "/" + distDir + "/", "/" + distDir, distDir + "/", distDir:
-			return nil
+		ignored[strings.TrimSpace(line)] = true
+	}
+	add := ""
+	for _, dir := range []string{distDir, stateDir} {
+		// A rule already covering the directory in any of its spellings is left
+		// exactly as the author wrote it.
+		if ignored["/"+dir+"/"] || ignored["/"+dir] || ignored[dir+"/"] || ignored[dir] {
+			continue
 		}
+		add += "/" + dir + "/\n"
+	}
+	if add == "" {
+		return nil
 	}
 	body := string(existing)
-	if !strings.HasSuffix(body, "\n") {
+	if body != "" && !strings.HasSuffix(body, "\n") {
 		body += "\n"
 	}
-	return os.WriteFile(path, []byte(body+"/"+distDir+"/\n"), 0o644)
+	return os.WriteFile(path, []byte(body+add), 0o644)
 }
 
 // ensureGitkeep adds a placeholder only to an empty src/, so adopting a
