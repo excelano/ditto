@@ -265,7 +265,7 @@ func installHint(cmd string) string {
 	case "xsync":
 		return " (sudo apt install xfiles)"
 	case "cleave":
-		return " (ships with axe: https://github.com/anderix/axe)"
+		return " (ships with axe: https://github.com/excelano/axe)"
 	}
 	return ""
 }

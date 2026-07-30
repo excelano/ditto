@@ -170,7 +170,7 @@ check_converters() {
 		say "      office-convert and xsync are apt packages:"
 		say "          curl -fsSL https://excelano.com/apt/setup.sh | sudo sh"
 		say "          sudo apt install office-convert xfiles"
-		say "      cleave ships with axe: https://github.com/anderix/axe"
+		say "      cleave ships with axe: https://github.com/excelano/axe"
 	fi
 }
 

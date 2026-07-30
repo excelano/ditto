@@ -12,8 +12,8 @@ The name is the ditto machine, the old spirit duplicator: the source and the
 built document are two pulls of the same master, not a copy.
 
 ditto reimplements nothing. It conducts tools that already exist —
-[office-convert](https://github.com/anderix/nursery/tree/main/office-convert)
-for Markdown and CSV conversion, [cleave](https://github.com/anderix/axe) for
+[office-convert](https://github.com/excelano/office-convert)
+for Markdown and CSV conversion, [cleave](https://github.com/excelano/axe) for
 portable HTML, and [xsync](https://github.com/excelano/xfiles) for the
 SharePoint push. Install whichever of those you need; ditto warns about what is
 missing.

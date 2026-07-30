@@ -45,8 +45,8 @@ and the publish step; without a set there is nothing for it to conduct.
 ditto **reimplements nothing**. It conducts tools that already exist and must be
 on `$PATH`:
 
-- [office-convert](https://github.com/anderix/nursery/tree/main/office-convert) — `md2docx`, `md2pptx`, `csv2xlsx` (pandoc + openpyxl).
-- [cleave](https://github.com/anderix/axe) — portable self-contained HTML.
+- [office-convert](https://github.com/excelano/office-convert) — `md2docx`, `md2pptx`, `csv2xlsx` (pandoc + openpyxl).
+- [cleave](https://github.com/excelano/axe) — portable self-contained HTML.
 - [xsync](https://github.com/excelano/xfiles) — the SharePoint mirror, for `publish`.
   Want a build whose `--help` lists `--itemize-changes`; older ones re-upload
   every Office file on every publish (see the publish section of `reference.md`).
