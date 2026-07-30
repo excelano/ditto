@@ -300,8 +300,11 @@ go build -o ~/bin/ditto .
 ```
 
 ditto is a single Go binary with no runtime dependencies of its own; the
-converters it calls (office-convert, cleave, xsync) are separate installs, and
-`apt install ditto` recommends `pandoc` for the common Markdown-to-Word path.
+converters it calls are separate packages. `apt install ditto` recommends
+[office-convert](https://github.com/excelano/office-convert), which supplies
+`md2docx`, `md2pptx`, and `csv2xlsx` and pulls in pandoc, so the Word, Excel,
+and PowerPoint targets work out of the box. `cleave` (HTML) and `xsync`
+(publish) are installed separately; `ditto check` names whichever are missing.
 
 ## Claude Code skill
 

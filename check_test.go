@@ -92,3 +92,35 @@ func TestCaseCollisions(t *testing.T) {
 		})
 	}
 }
+
+// Every converter ditto dispatches to on its own is one a user never chose and
+// so cannot be expected to know the provenance of: nothing about the name
+// md2docx says "office-convert". The hint is what makes the report actionable,
+// and the risk is that a new built-in is added to converterCmd without one.
+// Driving the real dispatch rather than restating the names guards that class.
+func TestEveryBuiltInConverterHasAnInstallHint(t *testing.T) {
+	pairs := []struct{ in, out string }{
+		{"report.md", "Report.docx"},
+		{"deck.md", "Deck.pptx"},
+		{"data.csv", "Data.xlsx"},
+		{"notes.md", "Notes.html"},
+		{"cal.ics", "Cal.html"},
+	}
+	for _, p := range pairs {
+		cmd, err := converterCmd(Target{Input: p.in, Output: p.out}, []string{p.in}, p.out)
+		if err != nil {
+			t.Fatalf("no built-in for %s -> %s: %v", p.in, p.out, err)
+		}
+		if installHint(cmd.Args[0]) == "" {
+			t.Errorf("built-in converter %q has no install hint", cmd.Args[0])
+		}
+	}
+	// xsync is not reached through converterCmd, but publish needs it and check
+	// reports it the same way.
+	if installHint("xsync") == "" {
+		t.Error("xsync has no install hint")
+	}
+	if installHint("./my-converter.sh") != "" {
+		t.Error("a custom converter should get no hint; ditto cannot know where it came from")
+	}
+}

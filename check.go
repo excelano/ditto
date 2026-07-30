@@ -59,7 +59,7 @@ func cmdCheck(args []string) error {
 	}
 	for _, cmd := range sortedKeys(tools) {
 		if _, err := exec.LookPath(cmd); err != nil {
-			problem("%s is not on PATH, needed by: %s", cmd, strings.Join(tools[cmd], ", "))
+			problem("%s is not on PATH, needed by: %s%s", cmd, strings.Join(tools[cmd], ", "), installHint(cmd))
 		}
 	}
 	if orphans, err := orphanOutputs(m.Targets, dist); err == nil {
@@ -249,6 +249,25 @@ func quotedList(set map[string]bool) string {
 	}
 	sort.Strings(items)
 	return strings.Join(items, " and ")
+}
+
+// installHint names where a missing built-in converter comes from, so the
+// report answers "now what" rather than only "not found". ditto orchestrates
+// tools it does not ship, which makes "not on PATH" the expected first
+// experience on a new machine rather than an exotic failure — and knowing that
+// md2docx lives in a package called office-convert is not something the name
+// tells you. A custom converter from the manifest gets no hint, correctly:
+// ditto has no idea where someone else's script comes from.
+func installHint(cmd string) string {
+	switch cmd {
+	case "md2docx", "md2pptx", "csv2xlsx":
+		return " (sudo apt install office-convert)"
+	case "xsync":
+		return " (sudo apt install xfiles)"
+	case "cleave":
+		return " (ships with axe: https://github.com/anderix/axe)"
+	}
+	return ""
 }
 
 // sortedKeys keeps every list check prints in a stable order, so the same

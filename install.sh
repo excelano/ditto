@@ -167,6 +167,10 @@ check_converters() {
 		say ""
 		say "Note: these converters ditto calls are not on PATH:$missing"
 		say "      Install whichever you need — ditto only orchestrates them."
+		say "      office-convert and xsync are apt packages:"
+		say "          curl -fsSL https://excelano.com/apt/setup.sh | sudo sh"
+		say "          sudo apt install office-convert xfiles"
+		say "      cleave ships with axe: https://github.com/anderix/axe"
 	fi
 }
 
