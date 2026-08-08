@@ -51,6 +51,12 @@ func main() {
 		fmt.Print(usage)
 	case "-V", "--version", "version":
 		fmt.Printf("ditto %s\n", resolveVersion())
+	// Terminal actions: they touch the user's skills directory and nothing
+	// else, so no manifest is read on the way through.
+	case "--install-skill":
+		os.Exit(installSkill(resolveVersion()))
+	case "--uninstall-skill":
+		os.Exit(uninstallSkill())
 	case "new":
 		err = cmdNew(args[1:])
 	case "init":
