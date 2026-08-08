@@ -2,7 +2,10 @@
 name: ditto
 description: >-
   Build a managed set of Office and HTML deliverables from text sources with the
-  `ditto` CLI — cargo for documents. Use this when a project keeps its
+  `ditto` CLI — cargo for documents. Reach for it on the phrasing people actually
+  use: "regenerate the Word versions", "the docx is out of date with the markdown",
+  "build the deliverables", "rebuild everything and push it to the client's
+  SharePoint", "which outputs are stale". Use this when a project keeps its
   deliverables as Markdown/CSV under `src/` with a `Ditto.toml`, or when a
   task is to produce the Word/Excel/PowerPoint/HTML versions of an authored set
   and optionally publish them to a SharePoint library: `ditto build`, then
