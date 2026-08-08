@@ -292,8 +292,16 @@ not writable). Pin a version with `DITTO_VERSION=v0.1.0` or choose the directory
 with `DITTO_INSTALL_DIR`. Uninstall with the matching
 `uninstall.sh`, or `sudo apt remove ditto` if you installed via apt.
 
-To build from source (and on macOS, where the system already ships its own
-`/usr/bin/ditto`, so pick a different output name):
+With a Go toolchain, install straight from the module:
+
+```sh
+go install github.com/excelano/ditto@latest
+```
+
+That lands `ditto` in `$GOBIN` (usually `~/go/bin`). macOS ships its own
+`/usr/bin/ditto`, so on that platform whichever directory comes first on your
+`PATH` decides which one runs — put `$GOBIN` ahead of `/usr/bin` deliberately, or
+build under a name of your choosing instead:
 
 ```sh
 go build -o ~/bin/ditto .
