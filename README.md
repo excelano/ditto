@@ -273,12 +273,14 @@ filesystem root, your home directory, or any directory containing the project.
 
 ## Install
 
+Every install line below ends with `ditto --install-skill`. That installs the [Claude Code skill](#claude-code-skill) alongside the binary, which is the one step people reliably skipped when it lived further down the page. Drop it if you do not use Claude Code — the CLI itself does not need it.
+
 On Debian and Ubuntu, install from the Excelano apt repo so ditto updates with
 the rest of your system. Add the repo once, then install:
 
 ```sh
 curl -fsSL https://excelano.com/apt/setup.sh | sudo sh
-sudo apt install ditto
+sudo apt install ditto && ditto --install-skill
 ```
 
 Anywhere else with a Linux binary, fetch the latest release:
@@ -295,7 +297,7 @@ with `DITTO_INSTALL_DIR`. Uninstall with the matching
 With a Go toolchain, install straight from the module:
 
 ```sh
-go install github.com/excelano/ditto@latest
+go install github.com/excelano/ditto@latest && ditto --install-skill
 ```
 
 That lands `ditto` in `$GOBIN` (usually `~/go/bin`). macOS ships its own
@@ -320,11 +322,20 @@ than recommended, since it is needed only to publish; install it with
 
 `skills/ditto/` is a [Claude Code](https://docs.claude.com/en/docs/claude-code)
 skill so an AI coding agent drives ditto instead of hand-running the converters
-it orchestrates. Install it into your skills directory:
+it orchestrates. The binary installs it:
 
 ```sh
-cp -r skills/ditto ~/.claude/skills/
+ditto --install-skill
 ```
+
+That writes `~/.claude/skills/ditto/` and stamps in the version it came from, so
+a later run reports whether the skill has fallen behind the binary rather than
+leaving you to notice. It is safe to re-run: an unchanged skill reports
+`already current` and nothing is written. `ditto --uninstall-skill` removes it.
+Restart Claude Code afterwards, since skills are discovered at session start.
+
+The skill is compiled into the binary, so this works the same however you
+installed ditto — apt, `go install`, or a build from source.
 
 The agent then reaches for `ditto build`/`ditto publish` on a manifest-governed
 deliverable set, and hands a genuine one-off conversion straight to the

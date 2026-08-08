@@ -29,6 +29,10 @@ Run 'ditto <command> --help' for the arguments and flags of one command.
 Flags:
   -h, --help       Show this help.
   -V, --version    Show the version.
+
+Claude Code:
+  --install-skill      Install the ditto skill into ~/.claude/skills/ditto.
+  --uninstall-skill    Remove it again.
 `
 
 func main() {
