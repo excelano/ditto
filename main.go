@@ -50,7 +50,7 @@ func main() {
 	case "-h", "--help", "help":
 		fmt.Print(usage)
 	case "-V", "--version", "version":
-		fmt.Printf("ditto %s\n", version)
+		fmt.Printf("ditto %s\n", resolveVersion())
 	case "new":
 		err = cmdNew(args[1:])
 	case "init":
