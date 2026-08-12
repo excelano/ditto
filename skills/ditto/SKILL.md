@@ -132,6 +132,13 @@ removed by `clean`, never hand-edited or committed.
 Every command takes `-h` / `--help`; `ditto <command> --help` is authoritative
 over this table.
 
+Exit `0` is success, and that includes the do-nothing outcomes: a build with
+everything already up to date, a `scan` that finds no uncovered files, a `clean`
+with nothing to remove. `1` means the project is wrong — a missing source, a
+converter that failed, a problem `check` reports. `2` means the command is wrong
+— an unknown command or flag, a missing argument. So a `2` is worth re-reading
+your invocation over; a `1` is worth reading the output.
+
 `clean` is the only thing that removes outputs. `build` only writes, so a
 renamed `output` leaves the old file in `dist/`, and `publish` without
 `--delete` would ship both — `check` names those orphans.

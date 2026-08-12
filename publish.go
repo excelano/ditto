@@ -24,7 +24,7 @@ func cmdPublish(args []string) error {
 				return unknownArg("publish", a)
 			}
 			if prefix != "" {
-				return fmt.Errorf("publish takes at most one filter argument")
+				return usagef("publish takes at most one filter argument")
 			}
 			prefix = a
 		}

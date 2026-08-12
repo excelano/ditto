@@ -237,6 +237,19 @@ whether `xsync --help` lists `--itemize-changes`; if it doesn't, upgrade. When i
 does, `xsync --dry-run --itemize-changes <dist> <root>` labels each line `new`,
 `time`, `content`, or `forced`, which answers why any particular file was picked.
 
+## Exit codes
+
+| Code | Means | Examples |
+|---|---|---|
+| `0` | success | a build with nothing out of date; `scan` finding no uncovered files; `clean` with nothing to remove; `check` on a clean manifest |
+| `1` | the project is wrong | a missing input, a converter that exited non-zero, a target that failed, `check` reporting problems, no `[publish] root` to publish to |
+| `2` | the command is wrong | unknown command or flag, a missing argument, more filter arguments than the verb takes |
+
+The `1`/`2` split is worth branching on: a `2` means nothing was attempted and
+the fix is in the command line, while a `1` means ditto ran and the project or
+the environment is what needs changing. An unknown command or flag also gets a
+did-you-mean when the typo is within two edits of a real one.
+
 ## Install
 
 `./install.sh` builds the single Go binary into `~/bin/ditto` (version stamped

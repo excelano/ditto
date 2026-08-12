@@ -22,7 +22,7 @@ func cmdBuild(args []string) error {
 				return unknownArg("build", a)
 			}
 			if prefix != "" {
-				return fmt.Errorf("build takes at most one filter argument")
+				return usagef("build takes at most one filter argument")
 			}
 			prefix = a
 		}

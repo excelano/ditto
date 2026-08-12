@@ -1,7 +1,5 @@
 package main
 
-import "fmt"
-
 // Per-command help. main dispatches on these before the command runs, so every
 // command answers -h and --help identically and none can forget to: the
 // alternative is each command parsing its own help flag, which is how `ditto
@@ -134,7 +132,8 @@ func wantsHelp(args []string) bool {
 }
 
 // unknownArg is the one voice every command uses to reject an argument, and it
-// points at the help that lists the real ones.
+// points at the help that lists the real ones. A usage error, not a project
+// error: nothing was attempted, so nothing is broken but the command line.
 func unknownArg(cmd, arg string) error {
-	return fmt.Errorf("%s: unknown argument %q; try 'ditto %s --help'", cmd, arg, cmd)
+	return usagef("%s: unknown argument %q; try 'ditto %s --help'", cmd, arg, cmd)
 }

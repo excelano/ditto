@@ -1,8 +1,10 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
+	"strings"
 )
 
 // version is injected at build time via -ldflags "-X main.version=...".
@@ -33,13 +35,19 @@ Flags:
 Claude Code:
   --install-skill      Install the ditto skill into ~/.claude/skills/ditto.
   --uninstall-skill    Remove it again.
+
+Exit codes:
+  0  success, including a build with nothing out of date
+  1  the project is wrong -- a missing source, a failed converter, a
+     manifest problem 'check' reports
+  2  the command is wrong -- unknown command or flag, missing argument
 `
 
 func main() {
 	args := os.Args[1:]
 	if len(args) == 0 {
-		fmt.Fprint(os.Stderr, usage)
-		os.Exit(1)
+		fmt.Fprintln(os.Stderr, "ditto: no command given; run 'ditto --help' for the list.")
+		os.Exit(2)
 	}
 
 	// Help is answered here rather than inside each command, so that asking a
@@ -76,11 +84,26 @@ func main() {
 	case "publish":
 		err = cmdPublish(args[1:])
 	default:
-		fmt.Fprintf(os.Stderr, "ditto: unknown command %q\n\n%s", args[0], usage)
-		os.Exit(1)
+		// A flag and a command fail for different reasons and deserve
+		// different sentences: "unknown command \"--verison\"" told the caller
+		// to look for a command it never meant to type.
+		noun, candidates := "command", commands
+		if strings.HasPrefix(args[0], "-") {
+			noun, candidates = "flag", globalFlags
+		}
+		fmt.Fprintf(os.Stderr, "ditto: unknown %s %q\n", noun, args[0])
+		if near := nearest(args[0], candidates); near != "" {
+			fmt.Fprintf(os.Stderr, "Did you mean %s?\n", near)
+		}
+		fmt.Fprintln(os.Stderr, "Run 'ditto --help' for the list.")
+		os.Exit(2)
 	}
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "ditto: "+err.Error())
+		var ue *usageError
+		if errors.As(err, &ue) {
+			os.Exit(2)
+		}
 		os.Exit(1)
 	}
 }

@@ -16,7 +16,7 @@ func cmdNew(args []string) error {
 		}
 	}
 	if len(args) != 1 {
-		return fmt.Errorf("usage: ditto new <name>")
+		return usagef("usage: ditto new <name>")
 	}
 	name := args[0]
 	if _, err := os.Stat(name); err == nil {
