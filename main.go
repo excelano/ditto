@@ -20,6 +20,7 @@ built.
 Usage:
   ditto new <name>      Scaffold a new project (src/, dist/, Ditto.toml).
   ditto init            Scaffold a project around the files already here.
+  ditto status          Report where the project stands, changing nothing.
   ditto check           Validate the manifest without building anything.
   ditto build           Build every target whose output is out of date.
   ditto scan            Report files in src/ that no target covers.
@@ -73,6 +74,8 @@ func main() {
 		err = cmdNew(args[1:])
 	case "init":
 		err = cmdInit(args[1:])
+	case "status":
+		err = cmdStatus(args[1:])
 	case "check":
 		err = cmdCheck(args[1:])
 	case "build":

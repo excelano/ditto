@@ -20,7 +20,7 @@ func usagef(format string, a ...any) error {
 
 // commands are the verbs main dispatches on, in the order the usage block lists
 // them. Kept here so a did-you-mean has something to search.
-var commands = []string{"new", "init", "check", "build", "scan", "clean", "publish"}
+var commands = []string{"new", "init", "status", "check", "build", "scan", "clean", "publish"}
 
 // globalFlags are the flags main answers itself, before any command runs.
 var globalFlags = []string{"--help", "--version", "--install-skill", "--uninstall-skill"}

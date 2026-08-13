@@ -168,6 +168,46 @@ it forces one full rebuild and nothing worse: it can withhold freshness but
 never grant it, and the timestamp comparison above always has to pass on its
 own. Do not hand-edit it, and do not commit it.
 
+## `status`
+
+One read-only report of the project, from the nearest manifest up the tree — the
+same root walk `build` does. Takes no arguments and no flags beyond `-h`.
+
+| Line | Reports |
+|---|---|
+| `project` | `[project] name` (or `(unnamed)`) and the project root, `~`-shortened |
+| `manifest` | The manifest filename and its target count |
+| `build` | Targets up to date vs out of date, by the same freshness test `build` applies |
+| `sources` | Files in `src/` no target covers, and (as a second line) declared inputs that are not there |
+| `dist` | File count, and how many of them no target produces |
+| `publish` | The `[publish] root`, or that there is none |
+| `converters` | The converter commands this project needs, each present or not on `$PATH` |
+
+It converts nothing, writes nothing, and makes no network call. The `publish`
+line therefore names the destination without saying anything about what is
+already in it; comparing the two costs a round trip, and staying offline is most
+of what makes the command cheap enough to type on arrival.
+
+**Counts, not diagnoses.** Where a line has something to report it names the
+command that will say what — `ditto build`, `ditto scan`, `ditto clean`, or
+`ditto check` for anything about the manifest itself. Two missing inputs are
+reported as a count on the `sources` line, not as two filenames: that is
+`check`'s report, and printing it here would give the same finding a second
+voice.
+
+**Freshness** reads `.ditto/fingerprints.json` exactly as `build` does. Since
+that cache can only withhold freshness and never grant it, a lost cache makes
+status overcount the work outstanding — wrong in the safe direction, and
+corrected by the build it just recommended. A target with a `pipeline` is never
+fresh, so a project built on pipelines always reads as out of date.
+
+**Exit code 0 whatever it finds**, including outside a project: "there is no
+`Ditto.toml` here or in any parent" is a true answer to the question rather than
+a failure to answer it, and status says so and points at `new` and `init`. The
+two cases that do fail are a manifest that will not parse and a project still on
+the pre-v0.2.0 `Manifest.toml` name — a broken project rather than an absent
+one, in both cases leaving nothing to report.
+
 ## `check`
 
 Validates without converting, and exits non-zero if anything would fail:
@@ -241,7 +281,7 @@ does, `xsync --dry-run --itemize-changes <dist> <root>` labels each line `new`,
 
 | Code | Means | Examples |
 |---|---|---|
-| `0` | success | a build with nothing out of date; `scan` finding no uncovered files; `clean` with nothing to remove; `check` on a clean manifest |
+| `0` | success | a build with nothing out of date; `scan` finding no uncovered files; `clean` with nothing to remove; `check` on a clean manifest; `status` whatever it reports, including outside a project |
 | `1` | the project is wrong | a missing input, a converter that exited non-zero, a target that failed, `check` reporting problems, no `[publish] root` to publish to |
 | `2` | the command is wrong | unknown command or flag, a missing argument, more filter arguments than the verb takes |
 

@@ -7,6 +7,7 @@ package main
 var commandUsage = map[string]string{
 	"new":     newUsage,
 	"init":    initUsage,
+	"status":  statusUsage,
 	"check":   checkUsage,
 	"build":   buildUsage,
 	"scan":    scanUsage,
@@ -37,6 +38,27 @@ Usage:
 'new' without the new directory, for a folder of sources that predates the
 decision to build it with ditto. Every write is additive: src/ keeps whatever
 it already holds and an existing .gitignore is appended to, not replaced.
+
+Flags:
+` + helpFlags
+
+const statusUsage = `ditto status - report where the project stands.
+
+Usage:
+  ditto status
+
+One read-only screen of what the other commands would each tell you a piece of:
+how many targets are out of date, which files in ` + srcDir + `/ no target covers, what
+sits in ` + distDir + `/ that nothing produces, where a publish would land, and whether
+the converters this project needs are on this machine.
+
+It converts nothing, writes nothing, and makes no network call, so the publish
+line names the destination without saying what is already there. Counts are all
+it reports: where something is off it names the command that will say what,
+which is 'ditto check' for anything about the manifest itself.
+
+Outside a project it says so and exits 0, rather than failing the way the
+commands that need a project do.
 
 Flags:
 ` + helpFlags

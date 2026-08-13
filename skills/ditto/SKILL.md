@@ -5,7 +5,8 @@ description: >-
   `ditto` CLI — cargo for documents. Reach for it on the phrasing people actually
   use: "regenerate the Word versions", "the docx is out of date with the markdown",
   "build the deliverables", "rebuild everything and push it to the client's
-  SharePoint", "which outputs are stale". Use this when a project keeps its
+  SharePoint", "which outputs are stale", "where does this project stand",
+  "what still needs building here". Use this when a project keeps its
   deliverables as Markdown/CSV under `src/` with a `Ditto.toml`, or when a
   task is to produce the Word/Excel/PowerPoint/HTML versions of an authored set
   and optionally publish them to a SharePoint library: `ditto build`, then
@@ -109,6 +110,7 @@ Anything outside that table needs a `converter` on the target (see
 |---|---|---|
 | `ditto new <name>` | Scaffold `src/`, `dist/`, `Ditto.toml`, `.gitignore` | Starting a new deliverable project |
 | `ditto init` | Same scaffold, in a directory that already holds sources | Adopting an existing folder of Markdown/CSV |
+| `ditto status` | One read-only screen: target counts, what is out of date, uncovered sources, orphans in `dist/`, publish root, converters present | Opening a project cold, or before deciding what to run |
 | `ditto check` | Validate the manifest — inputs, references, scripts, converters on PATH, outputs colliding case-insensitively — without building | After hand-editing the manifest; before a first publish; on a machine that may lack the converters |
 | `ditto build [prefix] [--force] [-n]` | Build every out-of-date target (or only those whose output is under `prefix/`) into `dist/` | Producing the Office/HTML files; iterating on one deliverable with a prefix |
 | `ditto scan [--write]` | Report `src/` files no target covers; `--write` appends a target per uncovered file with default output | After adding sources, to catch anything the manifest misses |
@@ -126,6 +128,16 @@ build`. `-n` / `--dry-run` lists the targets that decision selects and runs
 neither converter nor pipeline, which is the safe way to see the blast radius of
 a `--force`.
 
+`status` is the orientation command: it recomputes nothing the others cannot
+tell you and instead gathers it onto one screen, which is what makes it the
+right first command in an unfamiliar project. It converts nothing, writes
+nothing, and makes no network call, so the publish line names the destination
+without knowing what is already in it. It reports counts and names the command
+to run about each — `build`, `scan`, `clean`, or `check` — rather than repeating
+those commands' findings, so a count of missing inputs on the `sources` line
+means run `check` to see which. Outside a project it says so and exits 0
+instead of failing.
+
 `build` keeps its record of that in `.ditto/` at the project root — gitignored,
 removed by `clean`, never hand-edited or committed.
 
@@ -134,7 +146,7 @@ over this table.
 
 Exit `0` is success, and that includes the do-nothing outcomes: a build with
 everything already up to date, a `scan` that finds no uncovered files, a `clean`
-with nothing to remove. `1` means the project is wrong — a missing source, a
+with nothing to remove, and `status` whatever it reports. `1` means the project is wrong — a missing source, a
 converter that failed, a problem `check` reports. `2` means the command is wrong
 — an unknown command or flag, a missing argument. So a `2` is worth re-reading
 your invocation over; a `1` is worth reading the output.
@@ -157,6 +169,7 @@ cd client-assessment                 #   existing folder and run 'ditto init')
 # ... author sources under src/ (assessment.md, inventory.csv, ...) ...
 ditto scan --write                   # add a target per source, default outputs
 # ... hand-edit Ditto.toml: fix output names, add references, add a .pptx target ...
+ditto status                         # where does this stand? (safe first command)
 ditto check                          # catch bad paths before converting anything
 ditto build                          # press everything into dist/
 ditto publish -n                     # preview the SharePoint mirror

@@ -83,6 +83,16 @@ func (m *Manifest) resolveDist() (string, error) {
 	return dist, nil
 }
 
+// notAProjectError says there is no project here or above here. It is a
+// distinct type because `status` treats it as a state to report rather than a
+// failure to raise, while every other verb — each of which was about to do
+// something that needs a project — treats it like any other error.
+type notAProjectError struct{ start string }
+
+func (e *notAProjectError) Error() string {
+	return fmt.Sprintf("no %s in %s or any parent", manifestName, e.start)
+}
+
 // findProjectRoot walks up from the current directory looking for the manifest,
 // the way cargo finds Cargo.toml, so the verbs work from anywhere inside a
 // project instead of only at its root. It returns the directory holding the
@@ -114,7 +124,7 @@ func findProjectRoot() (string, error) {
 		return "", fmt.Errorf("no %s in %s or any parent, but %s has a %s: the manifest was renamed after v0.1.0. Rename it (mv %s %s) — the contents are unchanged",
 			manifestName, start, legacy, legacyManifestName, legacyManifestName, manifestName)
 	}
-	return "", fmt.Errorf("no %s in %s or any parent", manifestName, start)
+	return "", &notAProjectError{start: start}
 }
 
 // loadManifest finds the project root and reads the manifest there. It moves
@@ -122,7 +132,23 @@ func findProjectRoot() (string, error) {
 // dist/, converter and pipeline scripts — resolves against the project rather
 // than against wherever the user happened to be standing. Every verb that
 // reads a manifest goes through here, so none of them has to think about it.
+//
+// Moving the process is invisible to someone standing in a subdirectory, and
+// the output that follows names paths like dist/ relative to the root, so the
+// move is announced on stderr.
 func loadManifest() (*Manifest, error) {
+	return loadManifestAt(true)
+}
+
+// loadManifestQuiet loads without announcing the move to the project root. It
+// exists for `status`, whose first line is the project root: announcing it too
+// would print the same path twice, once as a warning about something the
+// command was asked to report.
+func loadManifestQuiet() (*Manifest, error) {
+	return loadManifestAt(false)
+}
+
+func loadManifestAt(announce bool) (*Manifest, error) {
 	root, err := findProjectRoot()
 	if err != nil {
 		return nil, err
@@ -135,9 +161,9 @@ func loadManifest() (*Manifest, error) {
 		if err := os.Chdir(root); err != nil {
 			return nil, fmt.Errorf("entering project root %s: %w", root, err)
 		}
-		// The output below names paths like dist/ relative to the root, which
-		// is not where the user is standing — so say where that is.
-		fmt.Fprintf(os.Stderr, "ditto: project root %s\n", root)
+		if announce {
+			fmt.Fprintf(os.Stderr, "ditto: project root %s\n", root)
+		}
 	}
 	var m Manifest
 	md, err := toml.DecodeFile(manifestName, &m)

@@ -160,6 +160,7 @@ converter = "converters/build_calendar.py"
 ```sh
 ditto new <name>      # scaffold src/, dist/, Ditto.toml, .gitignore
 ditto init            # scaffold a project around the files already here
+ditto status          # report where the project stands, changing nothing
 ditto check           # validate the manifest without building anything
 ditto build           # build every target whose output is out of date
 ditto build <prefix>  # build only targets whose output is under <prefix>/
@@ -182,6 +183,29 @@ its flags, and what it is for.
 already holds your sources and it writes the manifest, adds `dist/` to an
 existing `.gitignore` rather than replacing it, and leaves whatever is already
 in `src/` alone. Follow either with `ditto scan --write`.
+
+`status` is the one command to type when picking a project back up. It gathers
+what the others each know a piece of — how many targets are out of date, which
+files in `src/` no target covers, what sits in `dist/` that nothing produces,
+where a publish would land, and whether this machine has the converters the
+project needs — onto one screen:
+
+```
+project     coa-phase2  (~/clients/acme/coa-phase2)
+manifest    Ditto.toml, 14 targets
+build       11 up to date, 3 out of date; run 'ditto build'
+sources     2 files in src/ that no target covers; run 'ditto scan'
+dist        14 files, 1 produced by no target; run 'ditto clean'
+publish     https://acme.sharepoint.com/Shared Documents/Phase 2
+converters  csv2xlsx, md2docx, cleave: all present
+```
+
+It converts nothing, writes nothing, and makes no network call, which is why
+the publish line names the destination without claiming to know what is already
+there. Counts are all it reports: where something is off it names the command
+that will say what, and for anything about the manifest itself that command is
+`check`. Outside a project it says so and exits 0, since "there is no project
+here" is a true answer to the question rather than a failure to answer it.
 
 `check` answers "will this build?" without converting anything: every input
 exists, no two targets write the same output, every reference and pipeline

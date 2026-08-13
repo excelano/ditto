@@ -9,7 +9,7 @@ import (
 // Every command main dispatches on. A command added to main without an entry
 // here and in commandUsage would answer --help by rejecting it as an unknown
 // argument, which is the state this whole file exists to prevent.
-var dispatched = []string{"new", "init", "check", "build", "scan", "clean", "publish"}
+var dispatched = []string{"new", "init", "status", "check", "build", "scan", "clean", "publish"}
 
 func TestEveryCommandHasHelp(t *testing.T) {
 	for _, cmd := range dispatched {
