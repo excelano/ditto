@@ -160,6 +160,13 @@ produces a real error rather than being silently skipped.
 - Converters resolved from `$PATH` (`md2docx`, `csv2xlsx`, `cleave`) are **not**
   stat'd — after upgrading pandoc or office-convert, run `--force` once.
 - `ditto clean && ditto build` is the from-source guarantee.
+- `ditto build --profile <name>` (`-p`) applies a `[profile.<name>]` section:
+  `reference_docx`, `reference_pptx`, and `view`. A profile field beats both the
+  `[project]` default and a target's own `reference`; `view` replaces an
+  existing view but never introduces one. Unknown profile names fail and list
+  what the manifest defines. The profile is applied before the fingerprint, so
+  switching profiles rebuilds exactly the targets it restyles — which is why
+  draft and final can share one `dist/`.
 
 The per-entry comparison is backed by `.ditto/fingerprints.json` at the project
 root, written by `build` and removed by `clean`, gitignored by `new`/`init`. It

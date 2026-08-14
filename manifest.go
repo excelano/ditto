@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/BurntSushi/toml"
@@ -22,9 +23,78 @@ const (
 // Manifest is the authoritative description of a ditto project: nothing is
 // built that is not listed here.
 type Manifest struct {
-	Project Project  `toml:"project"`
-	Publish *Publish `toml:"publish"` // optional; nil when the section is absent
-	Targets []Target `toml:"target"`
+	Project  Project            `toml:"project"`
+	Publish  *Publish           `toml:"publish"` // optional; nil when the section is absent
+	Profiles map[string]Profile `toml:"profile"` // optional; keyed by profile name
+	Targets  []Target           `toml:"target"`
+}
+
+// Profile overrides styling for a whole build rather than per target, so a
+// deliverable set can be worked for days against a plain template and shipped
+// once against the branded one.
+//
+// A set field wins over both the project default and a target's own value.
+// That is the point rather than an accident: a draft build has to reach the
+// targets that name their reference explicitly, and those are exactly the ones
+// a project default would miss.
+//
+// Deliberately narrow. `converter` is not overridable, because changing it
+// changes what the deliverable is rather than how it looks, and a profile that
+// can do that is a second manifest. Nor can a profile exclude targets: the
+// prefix filter already builds one slice, and two ways to choose targets that
+// compose differently is a worse answer than one.
+type Profile struct {
+	ReferenceDocx string `toml:"reference_docx"` // styling reference for .docx targets
+	ReferencePptx string `toml:"reference_pptx"` // styling reference for .pptx targets
+	View          string `toml:"view"`           // view for targets that already have one
+}
+
+// apply returns t with this profile's overrides in place. It is called after
+// the project-level reference default has been resolved, so it overrides the
+// effective value whatever its source.
+//
+// View only replaces a view a target already has; it never introduces one. A
+// target with no view either does not take one, or takes its converter's
+// default, and a custom converter is handed VIEW in its environment — so
+// introducing a view here would change what those converters do rather than
+// how the output looks.
+func (p Profile) apply(t Target) Target {
+	switch ext(t.Output) {
+	case "docx":
+		if p.ReferenceDocx != "" {
+			t.Reference = p.ReferenceDocx
+		}
+	case "pptx":
+		if p.ReferencePptx != "" {
+			t.Reference = p.ReferencePptx
+		}
+	}
+	if p.View != "" && t.View != "" {
+		t.View = p.View
+	}
+	return t
+}
+
+// lookupProfile resolves a named profile, or fails naming what is available.
+// An unknown profile is a typo far more often than a missing section, and
+// silently building unprofiled would ship the branded template while the
+// terminal said "draft".
+func (m *Manifest) lookupProfile(name string) (Profile, error) {
+	if name == "" {
+		return Profile{}, nil
+	}
+	if p, ok := m.Profiles[name]; ok {
+		return p, nil
+	}
+	if len(m.Profiles) == 0 {
+		return Profile{}, fmt.Errorf("no profile %q: %s defines none", name, manifestName)
+	}
+	names := make([]string, 0, len(m.Profiles))
+	for n := range m.Profiles {
+		names = append(names, n)
+	}
+	sort.Strings(names)
+	return Profile{}, fmt.Errorf("no profile %q; %s defines: %s", name, manifestName, strings.Join(names, ", "))
 }
 
 type Project struct {

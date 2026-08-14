@@ -155,6 +155,40 @@ output = "deliverable3/Contract Action Calendar.xlsx"
 converter = "converters/build_calendar.py"
 ```
 
+## Profiles
+
+A deliverable set is worked one way and shipped another: for days against a
+plain template, once against the branded one. A profile restyles a whole build
+rather than one target.
+
+```toml
+[profile.draft]
+reference_docx = "brand/plain.docx"
+reference_pptx = "brand/plain.pptx"
+```
+
+`ditto build` uses no profile; `ditto build --profile draft` applies the
+overrides. A field set in a profile wins over both the `[project]` default and a
+target's own `reference` — a draft build has to reach the targets that name
+their reference explicitly, and those are the ones a project default would miss.
+
+`view` can be overridden too, but only where a target already has one. A target
+with no view either does not take one or takes its converter's default, and a
+custom converter is handed `VIEW` in its environment, so introducing one would
+change what the converter does rather than how the output looks.
+
+`converter` is deliberately not overridable. Changing it changes what the
+deliverable is rather than how it looks, and a profile that can do that is a
+second manifest. A profile cannot exclude targets either: the `<prefix>` filter
+already builds one slice, and two ways of choosing targets that compose
+differently is worse than one.
+
+Draft and final share one `dist/`. That is safe rather than convenient: a
+profile is applied before a target is fingerprinted, so switching profiles
+rebuilds what the profile restyles and leaves everything else alone. A draft
+file is never left sitting where a later final build would consider it up to
+date and skip it.
+
 ## Commands
 
 ```sh
@@ -166,6 +200,7 @@ ditto build           # build every target whose output is out of date
 ditto build <prefix>  # build only targets whose output is under <prefix>/
 ditto build --force   # rebuild every target, up to date or not
 ditto build -n        # list what would be rebuilt, without converting anything
+ditto build -p draft  # build with the named profile from the manifest
 ditto scan            # report files in src/ that no target covers
 ditto scan --write    # append a target per uncovered file, using defaults
 ditto clean           # remove the built deliverables in dist/

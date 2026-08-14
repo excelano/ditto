@@ -91,9 +91,24 @@ under that directory.
 Converters resolved from $PATH are not tracked, so upgrading pandoc or
 office-convert calls for --force once.
 
+A profile restyles a whole build rather than one target, which is how a
+deliverable set is actually worked: for days against a plain template, once
+against the branded one. Declare one in the manifest and name it here.
+
+  [profile.draft]
+  reference_docx = "brand/plain.docx"
+  reference_pptx = "brand/plain.pptx"
+
+A field set in a profile wins over both the project default and a target's own
+reference, so a draft build reaches the targets that name theirs explicitly.
+Output goes to the same dist/ either way: switching profiles rebuilds what the
+profile restyles and leaves the rest alone, so a draft file is never mistaken
+for a finished one.
+
 Flags:
   -f, --force      Rebuild every target, up to date or not.
   -n, --dry-run    List what would be rebuilt, without converting anything.
+  -p, --profile    Build with the named profile from the manifest.
 ` + helpFlags
 
 const scanUsage = `ditto scan - report files in src/ that no target covers.

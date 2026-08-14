@@ -10,22 +10,32 @@ import (
 
 func cmdBuild(args []string) error {
 	force, dryRun := false, false
-	var prefix string
+	var prefix, profileName string
+	wantProfile := false
 	for _, a := range args {
-		switch a {
-		case "-f", "--force":
+		switch {
+		case wantProfile:
+			profileName = a
+			wantProfile = false
+		case a == "-f" || a == "--force":
 			force = true
-		case "-n", "--dry-run":
+		case a == "-n" || a == "--dry-run":
 			dryRun = true
+		case a == "-p" || a == "--profile":
+			wantProfile = true
+		case strings.HasPrefix(a, "--profile="):
+			profileName = strings.TrimPrefix(a, "--profile=")
+		case strings.HasPrefix(a, "-"):
+			return unknownArg("build", a)
 		default:
-			if strings.HasPrefix(a, "-") {
-				return unknownArg("build", a)
-			}
 			if prefix != "" {
 				return usagef("build takes at most one filter argument")
 			}
 			prefix = a
 		}
+	}
+	if wantProfile {
+		return usagef("--profile needs a name")
 	}
 	m, err := loadManifest()
 	if err != nil {
@@ -40,10 +50,21 @@ func cmdBuild(args []string) error {
 		return nil
 	}
 
+	profile, err := m.lookupProfile(profileName)
+	if err != nil {
+		return err
+	}
+
 	var targets []Target
 	for _, t := range m.Targets {
 		if underPrefix(t.Output, prefix) {
+			// Order matters: the project default fills in first, then the
+			// profile overrides whatever that produced. Both land before the
+			// target reaches the fingerprint, so switching profiles marks
+			// every target the profile actually changed as stale and leaves
+			// the rest alone — which is what makes one dist/ safe to share.
 			t.Reference = effectiveReference(m.Project, t)
+			t = profile.apply(t)
 			targets = append(targets, t)
 		}
 	}
@@ -90,7 +111,11 @@ func cmdBuild(args []string) error {
 	if dryRun {
 		verb = "Would build"
 	}
-	fmt.Printf("%s %d of %d target(s) into %s/", verb, built, len(targets), dist)
+	if profileName != "" {
+		fmt.Printf("%s %d of %d target(s) into %s/ with profile %s", verb, built, len(targets), dist, profileName)
+	} else {
+		fmt.Printf("%s %d of %d target(s) into %s/", verb, built, len(targets), dist)
+	}
 	if fresh > 0 {
 		fmt.Printf(" (%d up to date)", fresh)
 	}

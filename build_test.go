@@ -348,3 +348,228 @@ func TestFailedTargetIsNotRecorded(t *testing.T) {
 		t.Errorf("converted %v, want both targets attempted on both builds", got)
 	}
 }
+
+// profileProject is two .docx targets — one naming its reference explicitly,
+// one relying on the project default — plus a draft profile that replaces
+// both. That split is the whole question a profile has to answer: a project
+// default alone would reach the second target and miss the first.
+const profileProject = `[project]
+name = "demo"
+default_reference_docx = "brand/excelano.docx"
+
+[profile.draft]
+reference_docx = "brand/plain.docx"
+
+[[target]]
+input = "a.md"
+output = "A.docx"
+reference = "brand/special.docx"
+
+[[target]]
+input = "b.md"
+output = "B.docx"
+`
+
+func loadProfileFixture(t *testing.T, body string) *Manifest {
+	t.Helper()
+	t.Chdir(t.TempDir())
+	mustWrite(t, manifestName, body)
+	m, err := loadManifest()
+	if err != nil {
+		t.Fatal(err)
+	}
+	return m
+}
+
+// effective is what cmdBuild computes for a target: the project default first,
+// then the profile over the top.
+func effective(m *Manifest, p Profile, t Target) Target {
+	t.Reference = effectiveReference(m.Project, t)
+	return p.apply(t)
+}
+
+func TestProfileOverridesAnExplicitTargetReference(t *testing.T) {
+	m := loadProfileFixture(t, profileProject)
+	p, err := m.lookupProfile("draft")
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := effective(m, p, m.Targets[0])
+	if got.Reference != "brand/plain.docx" {
+		t.Errorf("a draft profile has to reach a target that names its own reference; got %q", got.Reference)
+	}
+}
+
+func TestProfileOverridesTheProjectDefault(t *testing.T) {
+	m := loadProfileFixture(t, profileProject)
+	p, _ := m.lookupProfile("draft")
+	got := effective(m, p, m.Targets[1])
+	if got.Reference != "brand/plain.docx" {
+		t.Errorf("got %q, want the profile's reference", got.Reference)
+	}
+}
+
+func TestWithoutAProfileNothingChanges(t *testing.T) {
+	m := loadProfileFixture(t, profileProject)
+	p, err := m.lookupProfile("")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := effective(m, p, m.Targets[0]); got.Reference != "brand/special.docx" {
+		t.Errorf("target reference: got %q", got.Reference)
+	}
+	if got := effective(m, p, m.Targets[1]); got.Reference != "brand/excelano.docx" {
+		t.Errorf("project default: got %q", got.Reference)
+	}
+}
+
+func TestProfileReferenceIsPerOutputKind(t *testing.T) {
+	m := loadProfileFixture(t, `[project]
+name = "demo"
+
+[profile.draft]
+reference_docx = "plain.docx"
+reference_pptx = "plain.pptx"
+
+[[target]]
+input = "a.md"
+output = "A.pptx"
+reference = "fancy.pptx"
+
+[[target]]
+input = "b.csv"
+output = "B.xlsx"
+`)
+	p, _ := m.lookupProfile("draft")
+	if got := effective(m, p, m.Targets[0]); got.Reference != "plain.pptx" {
+		t.Errorf("a .pptx target must take the pptx reference; got %q", got.Reference)
+	}
+	// .xlsx has no styling reference at all, so a profile must not invent one.
+	if got := effective(m, p, m.Targets[1]); got.Reference != "" {
+		t.Errorf("a target with no reference kind must stay unreferenced; got %q", got.Reference)
+	}
+}
+
+func TestProfileViewReplacesButNeverIntroduces(t *testing.T) {
+	m := loadProfileFixture(t, `[project]
+name = "demo"
+
+[profile.draft]
+view = "plain"
+
+[[target]]
+input = "a.md"
+output = "A.html"
+view = "slides"
+
+[[target]]
+input = "b.md"
+output = "B.docx"
+`)
+	p, _ := m.lookupProfile("draft")
+	if got := p.apply(m.Targets[0]); got.View != "plain" {
+		t.Errorf("an existing view should be replaced; got %q", got.View)
+	}
+	// A target with no view either does not take one or takes its converter's
+	// default, and a custom converter reads VIEW from its environment — so
+	// introducing one here would change what the converter does.
+	if got := p.apply(m.Targets[1]); got.View != "" {
+		t.Errorf("a profile must not introduce a view; got %q", got.View)
+	}
+}
+
+func TestUnknownProfileNamesWhatExists(t *testing.T) {
+	m := loadProfileFixture(t, profileProject)
+	_, err := m.lookupProfile("finaal")
+	if err == nil {
+		t.Fatal("an unknown profile must fail rather than build unprofiled")
+	}
+	if !strings.Contains(err.Error(), "draft") {
+		t.Errorf("the error should name the profiles that exist; got %v", err)
+	}
+}
+
+func TestUnknownProfileWhenNoneAreDefined(t *testing.T) {
+	m := loadProfileFixture(t, "[project]\nname = \"demo\"\n")
+	_, err := m.lookupProfile("draft")
+	if err == nil {
+		t.Fatal("a manifest with no profiles must still reject a named one")
+	}
+	if !strings.Contains(err.Error(), "defines none") {
+		t.Errorf("got %v", err)
+	}
+}
+
+// The claim that makes one dist/ safe to share: the profile lands before the
+// fingerprint, so switching profiles rebuilds what the profile changed and
+// leaves everything else alone. Without that, a draft build would leave files
+// under dist/ that a later final build considered up to date and skipped.
+func TestSwitchingProfilesRebuildsOnlyWhatTheProfileChanges(t *testing.T) {
+	countingProject(t, `[project]
+name = "demo"
+
+[profile.draft]
+reference_docx = "plain.docx"
+
+[[target]]
+input = "a.md"
+output = "A.docx"
+converter = "convert.sh"
+
+[[target]]
+input = "b.md"
+output = "B.txt"
+converter = "convert.sh"
+`)
+	mustWrite(t, "plain.docx", "plain")
+
+	if err := cmdBuild(nil); err != nil {
+		t.Fatalf("first build: %v", err)
+	}
+	if got := len(conversions(t)); got != 2 {
+		t.Fatalf("first build should convert both targets, converted %d", got)
+	}
+
+	if err := cmdBuild([]string{"--profile", "draft"}); err != nil {
+		t.Fatalf("draft build: %v", err)
+	}
+	got := conversions(t)[2:]
+	if len(got) != 1 || !strings.HasSuffix(got[0], "A.docx") {
+		t.Errorf("switching profiles should rebuild only the .docx the profile restyles; rebuilt %v", got)
+	}
+
+	// And back: the unprofiled build has to restore the branded styling rather
+	// than treat the draft output as current.
+	if err := cmdBuild(nil); err != nil {
+		t.Fatalf("return to default: %v", err)
+	}
+	got = conversions(t)[3:]
+	if len(got) != 1 || !strings.HasSuffix(got[0], "A.docx") {
+		t.Errorf("returning to the default profile must rebuild the restyled target; rebuilt %v", got)
+	}
+}
+
+func TestProfileFlagNeedsAName(t *testing.T) {
+	countingProject(t, fmt.Sprintf(twoTargets, ""))
+	if err := cmdBuild([]string{"--profile"}); err == nil {
+		t.Error("--profile with no name must be a usage error")
+	}
+}
+
+func TestProfileFlagAcceptsEqualsForm(t *testing.T) {
+	countingProject(t, `[project]
+name = "demo"
+
+[profile.draft]
+reference_docx = "plain.docx"
+
+[[target]]
+input = "a.md"
+output = "A.docx"
+converter = "convert.sh"
+`)
+	mustWrite(t, "plain.docx", "plain")
+	if err := cmdBuild([]string{"--profile=draft"}); err != nil {
+		t.Errorf("--profile=draft should be accepted: %v", err)
+	}
+}
