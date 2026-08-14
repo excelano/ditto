@@ -27,6 +27,10 @@ Usage:
   ditto clean           Remove the built deliverables in dist/.
   ditto publish         Mirror dist/ to the publish root (SharePoint or local).
 
+A root manifest may instead declare a [workspace] with member projects, in
+which case status, check, build, scan, clean, and publish run across all of
+them, or across the one named as the first argument.
+
 Run 'ditto <command> --help' for the arguments and flags of one command.
 
 Flags:
@@ -74,18 +78,23 @@ func main() {
 		err = cmdNew(args[1:])
 	case "init":
 		err = cmdInit(args[1:])
+	// The project verbs run through workspaceAware, which fans them out when
+	// the nearest manifest is a workspace root and is a no-op everywhere else.
+	// new and init are absent on purpose: they create a project rather than
+	// operate on one, and running either across members would mean scaffolding
+	// over the projects that are already there.
 	case "status":
-		err = cmdStatus(args[1:])
+		err = workspaceAware("status", args[1:], cmdStatus)
 	case "check":
-		err = cmdCheck(args[1:])
+		err = workspaceAware("check", args[1:], cmdCheck)
 	case "build":
-		err = cmdBuild(args[1:])
+		err = workspaceAware("build", args[1:], cmdBuild)
 	case "scan":
-		err = cmdScan(args[1:])
+		err = workspaceAware("scan", args[1:], cmdScan)
 	case "clean":
-		err = cmdClean(args[1:])
+		err = workspaceAware("clean", args[1:], cmdClean)
 	case "publish":
-		err = cmdPublish(args[1:])
+		err = workspaceAware("publish", args[1:], cmdPublish)
 	default:
 		// A flag and a command fail for different reasons and deserve
 		// different sentences: "unknown command \"--verison\"" told the caller

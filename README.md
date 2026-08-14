@@ -155,6 +155,53 @@ output = "deliverable3/Contract Action Calendar.xlsx"
 converter = "converters/build_calendar.py"
 ```
 
+## Workspaces
+
+An engagement whose phases are authored separately and shipped together can be
+a workspace: a root that owns no deliverables of its own and runs a verb across
+its members.
+
+```toml
+[workspace]
+members = ["phase-1", "phase-2", "closeout"]
+```
+
+`status`, `check`, `build`, `scan`, `clean`, and `publish` run in every member.
+Naming one as the first argument runs it there alone: `ditto build phase-2`.
+`new` and `init` are not workspace-aware — they create a project rather than
+operate on one.
+
+Each member keeps its own `Ditto.toml`, `src/`, `dist/`, and `[publish] root`,
+because the sets usually land in different library folders and a
+workspace-level publish root would be wrong for all of them.
+
+**To filter by prefix inside a member, stand in the member**: `cd phase-2 &&
+ditto build D3`. That already works, because ditto finds the nearest manifest
+by walking up, and it is why the member selector and the prefix filter never
+have to share an argument position — `ditto build phase-2 D3` would have had to
+guess which was which.
+
+The member selector has to be the **first** argument, which is what keeps it
+apart from a flag's value: `ditto build --profile draft` at a workspace root
+would otherwise have to decide whether `draft` names a member.
+
+A root declares `[workspace]` or `[[target]]`, never both. Cargo allows a
+package alongside its workspace; the cost is that every command needs a rule
+about which one it means, and an engagement folder has no deliverables of its
+own to make that rule worth having.
+
+Every member runs even after one fails, and the count is reported at the end. A
+broken `phase-1` that stopped the run would say nothing about `phase-2` and
+`closeout`, which is the opposite of what running a verb across the engagement
+was for.
+
+Members do not inherit `[project]` defaults from the root. That would mean
+either every member load walking up looking for a workspace, or the same member
+building differently depending on which directory you are standing in — the
+second is a trap, and the first is a change to how every verb finds a project
+in exchange for one repeated line per member. Worth adding when the repetition
+hurts.
+
 ## Profiles
 
 A deliverable set is worked one way and shipped another: for days against a

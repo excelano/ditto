@@ -160,6 +160,13 @@ produces a real error rather than being silently skipped.
 - Converters resolved from `$PATH` (`md2docx`, `csv2xlsx`, `cleave`) are **not**
   stat'd — after upgrading pandoc or office-convert, run `--force` once.
 - `ditto clean && ditto build` is the from-source guarantee.
+- A root declaring `[workspace] members = [...]` owns no targets and runs
+  `status`, `check`, `build`, `scan`, `clean`, and `publish` across its members.
+  `ditto build phase-2` runs one; the selector must be the first argument so a
+  flag's value is never mistaken for a member name. Prefix filtering inside a
+  member is reached by standing in it (`cd phase-2 && ditto build D3`). A member
+  that fails does not stop the others, and the count is reported at the end.
+  Members keep their own publish roots and do not inherit `[project]` defaults.
 - `ditto build --profile <name>` (`-p`) applies a `[profile.<name>]` section:
   `reference_docx`, `reference_pptx`, and `view`. A profile field beats both the
   `[project]` default and a target's own `reference`; `view` replaces an

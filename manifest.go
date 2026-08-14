@@ -23,10 +23,11 @@ const (
 // Manifest is the authoritative description of a ditto project: nothing is
 // built that is not listed here.
 type Manifest struct {
-	Project  Project            `toml:"project"`
-	Publish  *Publish           `toml:"publish"` // optional; nil when the section is absent
-	Profiles map[string]Profile `toml:"profile"` // optional; keyed by profile name
-	Targets  []Target           `toml:"target"`
+	Project   Project            `toml:"project"`
+	Publish   *Publish           `toml:"publish"`   // optional; nil when the section is absent
+	Workspace *Workspace         `toml:"workspace"` // optional; present only on a workspace root
+	Profiles  map[string]Profile `toml:"profile"`   // optional; keyed by profile name
+	Targets   []Target           `toml:"target"`
 }
 
 // Profile overrides styling for a whole build rather than per target, so a

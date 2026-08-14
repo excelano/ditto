@@ -105,6 +105,11 @@ Output goes to the same dist/ either way: switching profiles rebuilds what the
 profile restyles and leaves the rest alone, so a draft file is never mistaken
 for a finished one.
 
+At a workspace root, build runs in every member, or in the one named as the
+first argument: 'ditto build phase-2'. To filter by prefix inside a member,
+run the command from inside it -- 'cd phase-2 && ditto build D3' -- so the
+member and the prefix never compete for the same position.
+
 Flags:
   -f, --force      Rebuild every target, up to date or not.
   -n, --dry-run    List what would be rebuilt, without converting anything.
