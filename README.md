@@ -33,10 +33,10 @@ says which directory it settled on.
 
 ```toml
 [project]
-name = "parsolvo-assessment"
+name = "contoso-assessment"
 
 [publish]                              # optional; omit to skip publishing
-root = "https://parsolvo.sharepoint.com/sites/Engagement/Shared Documents/Deliverables"
+root = "https://contoso.sharepoint.com/sites/Engagement/Shared Documents/Deliverables"
 
 [[target]]
 input = "assessment.md"                # relative to src/
@@ -60,7 +60,7 @@ still overrides the default.
 
 ```toml
 [project]
-name = "parsolvo-assessment"
+name = "contoso-assessment"
 default_reference_docx = "brand/excelano.docx"
 default_reference_pptx = "brand/excelano.pptx"
 ```
@@ -74,8 +74,8 @@ is rejected, since building there would write outputs into the source tree.
 
 ```toml
 [project]
-name = "parsolvo-assessment"
-dist = "~/austin-contract2-stage"
+name = "contoso-assessment"
+dist = "~/contoso-assessment-stage"
 ```
 
 | Input | Output | Engine |
@@ -273,12 +273,12 @@ where a publish would land, and whether this machine has the converters the
 project needs — onto one screen:
 
 ```
-project     coa-phase2  (~/clients/acme/coa-phase2)
+project     contoso-phase2  (~/clients/contoso/phase-2)
 manifest    Ditto.toml, 14 targets
 build       11 up to date, 3 out of date; run 'ditto build'
 sources     2 files in src/ that no target covers; run 'ditto scan'
 dist        14 files, 1 produced by no target; run 'ditto clean'
-publish     https://acme.sharepoint.com/Shared Documents/Phase 2
+publish     https://contoso.sharepoint.com/Shared Documents/Phase 2
 converters  csv2xlsx, md2docx, cleave: all present
 ```
 

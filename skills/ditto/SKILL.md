@@ -71,10 +71,10 @@ paths stay relative to the root. A minimal project:
 
 ```toml
 [project]
-name = "parsolvo-assessment"
+name = "contoso-assessment"
 
 [publish]                              # optional; omit to skip publishing
-root = "https://parsolvo.sharepoint.com/sites/Engagement/Shared Documents/Deliverables"
+root = "https://contoso.sharepoint.com/sites/Engagement/Shared Documents/Deliverables"
 
 [[target]]
 input = "assessment.md"                # relative to src/
