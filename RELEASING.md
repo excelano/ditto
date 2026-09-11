@@ -9,8 +9,7 @@ what is true of ditto and not of its siblings.
 |---|---|
 | Loop | goreleaser |
 | `apt-ship` argument | `ditto` |
-| Homebrew | none, deliberately |
-| winget | none — there is no Windows build |
+| Packages per release | 2, amd64 arm64 |
 
 **This is the shortest loop in the fleet.** Tag, let `release.yml` run,
 `apt-ship ditto`. Steps 3, 5, and 6 of the shared procedure do not apply: the
