@@ -306,7 +306,8 @@ did-you-mean when the typo is within two edits of a real one.
 
 ## Install
 
-`./install.sh` builds the single Go binary into `~/bin/ditto` (version stamped
-from `git describe` via ldflags). ditto has no runtime dependencies of its own;
-the converters it calls (office-convert, cleave, xsync) are separate installs and
-`install.sh` warns about any that are missing.
+ditto's README carries the install channels and their commands. What matters here
+is that ditto has no runtime dependencies of its own: the converters it calls are
+separate installs — office-convert for the Office formats, cleave for HTML, xsync
+to publish — and `install.sh` names any that are missing rather than letting a
+run fail on one later.
