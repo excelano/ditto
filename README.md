@@ -389,17 +389,6 @@ curl -fsSL https://excelano.com/apt/setup.sh | sudo sh
 sudo apt install ditto && ditto --install-skill
 ```
 
-Anywhere else with a Linux binary, fetch the latest release:
-
-```sh
-curl -fsSL https://raw.githubusercontent.com/excelano/ditto/main/install.sh | sh
-```
-
-The script drops the binary into `/usr/local/bin` (or `~/.local/bin` if that is
-not writable). Pin a version with `DITTO_VERSION=v0.1.0` or choose the directory
-with `DITTO_INSTALL_DIR`. Uninstall with the matching
-`uninstall.sh`, or `sudo apt remove ditto` if you installed via apt.
-
 With a Go toolchain, install straight from the module:
 
 ```sh
