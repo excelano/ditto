@@ -1,3 +1,6 @@
+// Author: David M. Anderson
+// Built with AI assistance (Claude, Anthropic)
+
 package main
 
 import (
@@ -67,11 +70,11 @@ func main() {
 	case "-h", "--help", "help":
 		fmt.Print(usage)
 	case "-V", "--version", "version":
-		fmt.Printf("ditto %s\n", resolveVersion())
+		fmt.Printf("ditto %s (skill %s)\n", resolveVersion(), skillRevision())
 	// Terminal actions: they touch the user's skills directory and nothing
 	// else, so no manifest is read on the way through.
 	case "--install-skill":
-		os.Exit(installSkill(resolveVersion()))
+		os.Exit(installSkill())
 	case "--uninstall-skill":
 		os.Exit(uninstallSkill())
 	case "new":

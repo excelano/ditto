@@ -423,10 +423,11 @@ it orchestrates. The binary installs it:
 ditto --install-skill
 ```
 
-That writes `~/.claude/skills/ditto/` and stamps in the version it came from, so
-a later run reports whether the skill has fallen behind the binary rather than
-leaving you to notice. It is safe to re-run: an unchanged skill reports
-`already current` and nothing is written. `ditto --uninstall-skill` removes it.
+That writes `~/.claude/skills/ditto/` and stamps in the skill's revision, which
+`ditto -V` also prints, so a later run reports whether the skill has fallen
+behind the binary rather than leaving you to notice. It is safe to re-run: an
+unchanged skill reports `already current` and nothing is written.
+`ditto --uninstall-skill` removes it.
 Restart Claude Code afterwards, since skills are discovered at session start.
 
 The skill is compiled into the binary, so this works the same however you
