@@ -1,3 +1,6 @@
+// Author: David M. Anderson
+// Built with AI assistance (Claude, Anthropic)
+
 package main
 
 import (
@@ -255,13 +258,13 @@ func quotedList(set map[string]bool) string {
 // report answers "now what" rather than only "not found". ditto orchestrates
 // tools it does not ship, which makes "not on PATH" the expected first
 // experience on a new machine rather than an exotic failure — and knowing that
-// md2docx lives in a package called office-convert is not something the name
+// md2docx lives in a package called this2that is not something the name
 // tells you. A custom converter from the manifest gets no hint, correctly:
 // ditto has no idea where someone else's script comes from.
 func installHint(cmd string) string {
 	switch cmd {
 	case "md2docx", "md2pptx", "csv2xlsx":
-		return " (sudo apt install office-convert)"
+		return " (sudo apt install this2that)"
 	case "xsync":
 		return " (sudo apt install xfiles)"
 	case "cleave":

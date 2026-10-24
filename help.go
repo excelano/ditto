@@ -1,3 +1,6 @@
+// Author: David M. Anderson
+// Built with AI assistance (Claude, Anthropic)
+
 package main
 
 // Per-command help. main dispatches on these before the command runs, so every
@@ -89,7 +92,7 @@ the others alone. Give a <prefix> to build only targets whose output falls
 under that directory.
 
 Converters resolved from $PATH are not tracked, so upgrading pandoc or
-office-convert calls for --force once.
+this2that calls for --force once.
 
 A profile restyles a whole build rather than one target, which is how a
 deliverable set is actually worked: for days against a plain template, once

@@ -65,9 +65,9 @@ extension)`:
 
 | Inputs | Output | Command |
 |---|---|---|
-| one `.md`/`.markdown` | `.docx` | `md2docx <in> <out>` (office-convert) |
-| one `.md`/`.markdown` | `.pptx` | `md2pptx <in> <out>` (office-convert) |
-| one `.csv` | `.xlsx` | `csv2xlsx <in> <out>` (office-convert) |
+| one `.md`/`.markdown` | `.docx` | `md2docx <in> <out>` (this2that) |
+| one `.md`/`.markdown` | `.pptx` | `md2pptx <in> <out>` (this2that) |
+| one `.csv` | `.xlsx` | `csv2xlsx <in> <out>` (this2that) |
 | several `.csv` | `.xlsx` | `csv2xlsx <in>… -o <out>` — one sheet per CSV, named by filename stem, in listed order |
 | one `.md`/`.markdown`/`.csv`/`.tsv`/`.ics`/`.ical` | `.html` | `cleave <in> <out> [--view …] [--brand …]` |
 
@@ -158,7 +158,7 @@ produces a real error rather than being silently skipped.
   Editing a **different** target, or adding one, does not — the comparison is
   per entry, not against the manifest's timestamp.
 - Converters resolved from `$PATH` (`md2docx`, `csv2xlsx`, `cleave`) are **not**
-  stat'd — after upgrading pandoc or office-convert, run `--force` once.
+  stat'd — after upgrading pandoc or this2that, run `--force` once.
 - `ditto clean && ditto build` is the from-source guarantee.
 - A root declaring `[workspace] members = [...]` owns no targets and runs
   `status`, `check`, `build`, `scan`, `clean`, and `publish` across its members.
@@ -308,6 +308,6 @@ did-you-mean when the typo is within two edits of a real one.
 
 ditto's README carries the install channels and their commands. What matters here
 is that ditto has no runtime dependencies of its own: the converters it calls are
-separate installs — office-convert for the Office formats, cleave for HTML, xsync
+separate installs — this2that for the Office formats, cleave for HTML, xsync
 to publish — and `install.sh` names any that are missing rather than letting a
 run fail on one later.

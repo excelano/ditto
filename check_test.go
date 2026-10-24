@@ -1,3 +1,6 @@
+// Author: David M. Anderson
+// Built with AI assistance (Claude, Anthropic)
+
 package main
 
 import (
@@ -95,7 +98,7 @@ func TestCaseCollisions(t *testing.T) {
 
 // Every converter ditto dispatches to on its own is one a user never chose and
 // so cannot be expected to know the provenance of: nothing about the name
-// md2docx says "office-convert". The hint is what makes the report actionable,
+// md2docx says "this2that". The hint is what makes the report actionable,
 // and the risk is that a new built-in is added to converterCmd without one.
 // Driving the real dispatch rather than restating the names guards that class.
 func TestEveryBuiltInConverterHasAnInstallHint(t *testing.T) {

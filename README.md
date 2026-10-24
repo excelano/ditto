@@ -12,7 +12,7 @@ The name is the ditto machine, the old spirit duplicator: the source and the
 built document are two pulls of the same master, not a copy.
 
 ditto reimplements nothing. It conducts tools that already exist —
-[office-convert](https://github.com/excelano/office-convert)
+[this2that](https://github.com/excelano/this2that)
 for Markdown and CSV conversion, [cleave](https://github.com/excelano/axe) for
 portable HTML, and [xsync](https://github.com/excelano/xfiles) for the
 SharePoint push. Install whichever of those you need; ditto warns about what is
@@ -80,10 +80,10 @@ dist = "~/contoso-assessment-stage"
 
 | Input | Output | Engine |
 |---|---|---|
-| `.md` | `.docx` | office-convert (pandoc) |
-| `.md` | `.pptx` | office-convert (pandoc) |
-| `.csv` | `.xlsx` | office-convert (openpyxl) |
-| several `.csv` | `.xlsx` | office-convert (one sheet per CSV) |
+| `.md` | `.docx` | this2that (pandoc) |
+| `.md` | `.pptx` | this2that (pandoc) |
+| `.csv` | `.xlsx` | this2that (openpyxl) |
+| several `.csv` | `.xlsx` | this2that (one sheet per CSV) |
 | `.md` / `.csv` / `.ics` | `.html` | cleave |
 
 For anything the built-ins do not cover, set `converter` on the target to your
@@ -343,7 +343,7 @@ Two things are deliberately outside that check. A target with a `pipeline`
 always rebuilds, because the pipeline exists to regenerate inputs from
 somewhere ditto cannot see and their timestamps prove nothing about whether the
 result is current. And converters found on `$PATH` are not tracked, so after
-upgrading pandoc or office-convert, run `--force` once to pick up the new
+upgrading pandoc or this2that, run `--force` once to pick up the new
 output. When you want the guarantee rather than the speed, `ditto clean &&
 ditto build` reproduces the whole set from source.
 
@@ -406,7 +406,7 @@ go build -o ~/bin/ditto .
 
 ditto is a single Go binary with no runtime dependencies of its own; the
 converters it calls are separate packages. `apt install ditto` recommends
-both of them — [office-convert](https://github.com/excelano/office-convert),
+both of them — [this2that](https://github.com/excelano/this2that),
 which supplies `md2docx`, `md2pptx`, and `csv2xlsx` and pulls in pandoc, and
 [cleave](https://github.com/excelano/axe), which bakes the portable HTML — so
 every built-in output format works out of the box. `xsync` is suggested rather

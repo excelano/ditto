@@ -11,10 +11,10 @@ description: >-
   task is to produce the Word/Excel/PowerPoint/HTML versions of an authored set
   and optionally publish them to a SharePoint library: `ditto build`, then
   `ditto publish`. ditto is the conductor, not a converter — it drives
-  office-convert, cleave, and xsync and reimplements none of them. Do NOT
+  this2that, cleave, and xsync and reimplements none of them. Do NOT
   hand-run `pandoc`, `openpyxl`, or a one-off python script to convert files a
   manifest already governs; do NOT reach for ditto to convert a single loose
-  file (call `md2docx`/`csv2xlsx` from office-convert directly), to edit cell
+  file (call `md2docx`/`csv2xlsx` from this2that directly), to edit cell
   values (that is xled), or to query/aggregate a table (that is xql/DuckDB).
 ---
 
@@ -49,7 +49,7 @@ and the publish step; without a set there is nothing for it to conduct.
 ditto **reimplements nothing**. It conducts tools that already exist and must be
 on `$PATH`:
 
-- [office-convert](https://github.com/excelano/office-convert) — `md2docx`, `md2pptx`, `csv2xlsx` (pandoc + openpyxl).
+- [this2that](https://github.com/excelano/this2that) — `md2docx`, `md2pptx`, `csv2xlsx` (pandoc + openpyxl).
 - [cleave](https://github.com/excelano/axe) — portable self-contained HTML.
 - [xsync](https://github.com/excelano/xfiles) — the SharePoint mirror, for `publish`.
   Want a build whose `--help` lists `--itemize-changes`; older ones re-upload
@@ -94,10 +94,10 @@ just by ending one output `.docx` and the other `.pptx`.
 
 | Input | Output | Engine |
 |---|---|---|
-| `.md` | `.docx` | office-convert (pandoc) |
-| `.md` | `.pptx` | office-convert (pandoc) |
-| `.csv` | `.xlsx` | office-convert (openpyxl) |
-| several `.csv` | `.xlsx` | office-convert — one sheet per CSV |
+| `.md` | `.docx` | this2that (pandoc) |
+| `.md` | `.pptx` | this2that (pandoc) |
+| `.csv` | `.xlsx` | this2that (openpyxl) |
+| several `.csv` | `.xlsx` | this2that — one sheet per CSV |
 | `.md` / `.csv` / `.ics` | `.html` | cleave |
 
 Anything outside that table needs a `converter` on the target (see

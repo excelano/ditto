@@ -1,3 +1,6 @@
+// Author: David M. Anderson
+// Built with AI assistance (Claude, Anthropic)
+
 package main
 
 import (
@@ -209,7 +212,7 @@ output = "Report.docx"
 
 // "Can this machine build this project" is the question that separates a wrong
 // project from a new laptop, and the answer has to carry where the tool comes
-// from: nothing about the name md2docx says office-convert.
+// from: nothing about the name md2docx says this2that.
 func TestStatusReportsMissingConverterWithHint(t *testing.T) {
 	statusProject(t)
 	t.Setenv("PATH", t.TempDir()) // an empty PATH: nothing is installed
@@ -217,7 +220,7 @@ func TestStatusReportsMissingConverterWithHint(t *testing.T) {
 	if !strings.Contains(out, "md2docx: not on PATH") {
 		t.Errorf("a missing converter should be named:\n%s", out)
 	}
-	if !strings.Contains(out, "sudo apt install office-convert") {
+	if !strings.Contains(out, "sudo apt install this2that") {
 		t.Errorf("a missing built-in should say where it comes from:\n%s", out)
 	}
 }

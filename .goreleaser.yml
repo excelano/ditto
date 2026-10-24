@@ -47,7 +47,7 @@ nfpms:
       Author Markdown and CSV under src/, build to Word/Excel/PowerPoint and
       portable HTML under dist/, then optionally publish to a SharePoint
       library. ditto conducts the converters and reimplements nothing: it
-      calls pandoc-based office-convert (md2docx/md2pptx/csv2xlsx), cleave for
+      calls pandoc-based this2that (md2docx/md2pptx/csv2xlsx), cleave for
       HTML, and xsync (from the xfiles suite) for the SharePoint push. Install
       whichever converters you need; ditto warns about what is missing.
     homepage: https://github.com/excelano/ditto
@@ -57,16 +57,16 @@ nfpms:
     section: utils
     priority: optional
     bindir: /usr/bin
-    # Between them, office-convert (md2docx/md2pptx/csv2xlsx) and cleave (html)
+    # Between them, this2that (md2docx/md2pptx/csv2xlsx) and cleave (html)
     # are every built-in converter ditto has, so both are recommended rather
     # than suggested: apt installs them by default and a fresh `apt install
     # ditto` can build every output format the manifest allows, while
     # --no-install-recommends still gets the bare conductor for someone who
     # brings their own converters. pandoc is not named here because
-    # office-convert depends on it directly. xsync (packaged as xfiles) stays a
+    # this2that depends on it directly. xsync (packaged as xfiles) stays a
     # suggestion — it is needed only to publish, not to build.
     recommends:
-      - office-convert
+      - this2that
       - cleave
     suggests:
       - xfiles

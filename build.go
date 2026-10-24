@@ -1,3 +1,6 @@
+// Author: David M. Anderson
+// Built with AI assistance (Claude, Anthropic)
+
 package main
 
 import (
@@ -163,7 +166,7 @@ func srcInputs(t Target) []string {
 // rebuilds: the pipeline exists to generate or refresh inputs from somewhere
 // ditto cannot see, so its inputs' mtimes say nothing about whether the result
 // is current. And converters resolved from $PATH are not stat'd, so upgrading
-// pandoc or office-convert calls for `ditto build --force`.
+// pandoc or this2that calls for `ditto build --force`.
 func isFresh(t Target, dist string, fps fingerprints) bool {
 	if len(t.Pipeline) > 0 {
 		return false
@@ -401,7 +404,7 @@ func allExt(paths []string, want string) bool {
 	return true
 }
 
-// pandocCmd builds an office-convert invocation. Those scripts read the style
+// pandocCmd builds a this2that invocation. Those scripts read the style
 // template from REFERENCE_DOC, so reference is passed through the environment.
 func pandocCmd(tool, reference, in, out string) *exec.Cmd {
 	cmd := exec.Command(tool, in, out)
