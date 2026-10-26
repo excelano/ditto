@@ -379,7 +379,7 @@ filesystem root, your home directory, or any directory containing the project.
 
 ## Install
 
-Every install line below ends with `ditto --install-skill`. That installs the [Claude Code skill](#claude-code-skill) alongside the binary, which is the one step people reliably skipped when it lived further down the page. Drop it if you do not use Claude Code — the CLI itself does not need it.
+Every install line below ends with `ditto --install-skill`. That installs the [Claude Code skill](#claude-code-skill) alongside the binary. Drop it if you do not use Claude Code — the CLI itself does not need it.
 
 On Debian and Ubuntu, install from the Excelano apt repo so ditto updates with
 the rest of your system. Add the repo once, then install:

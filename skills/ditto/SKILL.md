@@ -33,7 +33,7 @@ The authoritative sources for ditto's behavior are the binary itself
 if anything here conflicts with them, they win. These recipes assume a ditto
 that supports multiple `inputs` per target, `pipeline` pre-steps, a `[project]`
 `dist` override, and `build`/`publish` prefix filters — verify with
-`ditto --help` and rebuild from source (`./install.sh`) if a feature is missing.
+`ditto --help` and update it the way you installed it if a feature is missing.
 
 ## The one rule that decides whether ditto is the right tool
 

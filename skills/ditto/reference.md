@@ -218,8 +218,8 @@ fresh, so a project built on pipelines always reads as out of date.
 **Exit code 0 whatever it finds**, including outside a project: "there is no
 `Ditto.toml` here or in any parent" is a true answer to the question rather than
 a failure to answer it, and status says so and points at `new` and `init`. The
-two cases that do fail are a manifest that will not parse and a project still on
-the pre-v0.2.0 `Manifest.toml` name — a broken project rather than an absent
+two cases that do fail are a manifest that will not parse and a project whose
+manifest is still named `Manifest.toml` — a broken project rather than an absent
 one, in both cases leaving nothing to report.
 
 ## `check`
@@ -309,5 +309,5 @@ did-you-mean when the typo is within two edits of a real one.
 ditto's README carries the install channels and their commands. What matters here
 is that ditto has no runtime dependencies of its own: the converters it calls are
 separate installs — this2that for the Office formats, cleave for HTML, xsync
-to publish — and `install.sh` names any that are missing rather than letting a
+to publish — and `ditto status` names any that are missing rather than letting a
 run fail on one later.
