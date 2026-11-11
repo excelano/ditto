@@ -1,10 +1,9 @@
 # ditto — reference
 
 Complete contracts for authoring a `Ditto.toml`, writing a custom converter,
-and understanding what `build`, `scan`, and `publish` do. The binary
-(`ditto --help` for the command list, `ditto <command> --help` for one
-command's flags) and the [README](https://github.com/excelano/ditto/blob/main/README.md)
-are authoritative; this expands on them.
+and understanding what each command does. The binary (`ditto --help` for the
+command list, `ditto <command> --help` for one command's flags) is
+authoritative; this expands on it.
 
 ## Layout and conventions
 
@@ -13,9 +12,10 @@ are authoritative; this expands on them.
 - `dist/` — built deliverables. Gitignored by the scaffold. Overridable per
   project (see `dist` below). Outputs are named relative to it.
 - `Ditto.toml` — in the project root, authoritative. Not listed, not built.
-- Commands work from anywhere inside the project. `build`, `scan`, and
-  `publish` walk up from the current directory to the nearest `Ditto.toml` the
-  way cargo finds `Cargo.toml`, then run from that root — so every path they
+- Commands work from anywhere inside the project. Every command that works on
+  a project (all but `new` and `init`) walks up from the current directory to
+  the nearest `Ditto.toml` the way cargo finds `Cargo.toml`, then runs from that
+  root — so every path they
   print or resolve is relative to the root, not to where you are standing. When
   the two differ, ditto names the root on stderr.
 
@@ -167,6 +167,7 @@ produces a real error rather than being silently skipped.
   member is reached by standing in it (`cd phase-2 && ditto build D3`). A member
   that fails does not stop the others, and the count is reported at the end.
   Members keep their own publish roots and do not inherit `[project]` defaults.
+  A root declares `[workspace]` or `[[target]]`, never both.
 - `ditto build --profile <name>` (`-p`) applies a `[profile.<name>]` section:
   `reference_docx`, `reference_pptx`, and `view`. A profile field beats both the
   `[project]` default and a target's own `reference`; `view` replaces an
@@ -185,7 +186,8 @@ own. Do not hand-edit it, and do not commit it.
 ## `status`
 
 One read-only report of the project, from the nearest manifest up the tree — the
-same root walk `build` does. Takes no arguments and no flags beyond `-h`.
+same root walk `build` does. It takes no flags beyond `-h`, and no arguments
+except, at a workspace root, a member name, as every project verb does.
 
 | Line | Reports |
 |---|---|

@@ -15,7 +15,8 @@ description: >-
   hand-run `pandoc`, `openpyxl`, or a one-off python script to convert files a
   manifest already governs; do NOT reach for ditto to convert a single loose
   file (call `md2docx`/`csv2xlsx` from this2that directly), to edit cell
-  values (that is xled), or to query/aggregate a table (that is xql/DuckDB).
+  values (that is xled), to query/aggregate a table (that is xql), to reshape one
+  (xshape), or to join tables (a SQL engine such as DuckDB).
 ---
 
 # ditto — cargo for Microsoft documents
@@ -28,9 +29,9 @@ portable-HTML counterpart under `dist/`; and an optional publish step mirrors
 version; the Office files are the impression you hand to people who live in Word
 and Excel.
 
-The authoritative sources for ditto's behavior are the binary itself
-(`ditto --help`) and the [README](https://github.com/excelano/ditto/blob/main/README.md);
-if anything here conflicts with them, they win. These recipes assume a ditto
+The authoritative source for ditto's behavior is the binary itself
+(`ditto --help`, `ditto <command> --help`); if anything here conflicts with it,
+it wins. These recipes assume a ditto
 that supports multiple `inputs` per target, `pipeline` pre-steps, a `[project]`
 `dist` override, and `build`/`publish` prefix filters — verify with
 `ditto --help` and update it the way you installed it if a feature is missing.
@@ -58,9 +59,10 @@ on `$PATH`:
 So the boundary is: **ditto orchestrates; it is not the converter and not the
 SharePoint client.** Reach past ditto to a converter directly only for a genuine
 one-off outside any project. For editing the *values* in a CSV before it builds,
-that is [xled](https://github.com/excelano/xled); for querying or reshaping a
-table, that is [xql](https://github.com/excelano/xql)/DuckDB — do that work
-first, in `src/`, then let ditto build.
+that is [xled](https://github.com/excelano/xled); for querying a table,
+[xql](https://github.com/excelano/xql); for reshaping it,
+[xshape](https://github.com/excelano/xshape); for joining tables, a SQL engine
+such as DuckDB — do that work first, in `src/`, then let ditto build.
 
 ## The manifest is authoritative
 
@@ -92,16 +94,9 @@ to run, you *name the output file*, and the extension chooses. The same
 `assessment.md` builds a Word document in one target and a slide deck in another
 just by ending one output `.docx` and the other `.pptx`.
 
-| Input | Output | Engine |
-|---|---|---|
-| `.md` | `.docx` | this2that (pandoc) |
-| `.md` | `.pptx` | this2that (pandoc) |
-| `.csv` | `.xlsx` | this2that (openpyxl) |
-| several `.csv` | `.xlsx` | this2that — one sheet per CSV |
-| `.md` / `.csv` / `.ics` | `.html` | cleave |
-
-Anything outside that table needs a `converter` on the target (see
-`reference.md`). `reference` is a style template (a pandoc reference doc for
+The built-ins cover Markdown to `.docx` and `.pptx`, one or several CSVs to
+`.xlsx`, and Markdown, CSV or calendar files to `.html`; `reference.md` has the
+dispatch table. Anything outside it needs a `converter` on the target. `reference` is a style template (a pandoc reference doc for
 `.docx`/`.pptx`, a brand CSS for `.html`); `view` is a cleave view for HTML.
 
 ## The verbs
@@ -214,8 +209,9 @@ ditto publish --delete
 - **Fix or clean cell values before building** (strip currency, pad leading
   zeros, normalize case) → [xled](https://github.com/excelano/xled) on the CSV in
   `src/` first, then `ditto build`.
-- **Query, join, aggregate, or reshape a table** → xql/DuckDB, producing a clean
-  CSV into `src/`; ditto builds it.
+- **Query or aggregate a table** → xql; **reshape it** → xshape; **join tables**
+  → a SQL engine such as DuckDB. Each produces a clean CSV into `src/`; ditto
+  builds it.
 - **Custom presentation logic** (a colored, formula-bearing workbook; a
   templated deck) → set `converter` on the target and let ditto call your script
   with the `INPUTS`/`REFERENCE_DOC`/`VIEW` contract. ditto still conducts; your
