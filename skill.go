@@ -8,7 +8,7 @@ package main
 //
 // The skill is compiled into the binary rather than shipped as a package data
 // file, because the binary is the only artifact present on every install path.
-// apt, Homebrew, winget, `go install`, the curl one-liner, a prebuilt GitHub
+// apt, winget, `go install`, the curl one-liner, a prebuilt GitHub
 // binary and a source build all produce the binary; `go install` in particular
 // ships no data files at all. Embedding is what makes one instruction —
 // `ditto --install-skill` — true everywhere.
